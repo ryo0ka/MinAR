@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR.iOS;
 
-#pragma warning disable 0169
 public class ParticlePainter : MonoBehaviour {
     public ParticleSystem painterParticlePrefab;
     public float minDistanceThreshold;

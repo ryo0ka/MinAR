@@ -1,9 +1,8 @@
 ﻿using UnityEngine;
 using UnityEngine.Networking.PlayerConnection;
 using System.Text;
-using Utils;
+using UnityEngine.XR.iOS.Utils;
 
-#pragma warning disable 0169
 namespace UnityEngine.XR.iOS
 {
 	
@@ -95,20 +94,26 @@ namespace UnityEngine.XR.iOS
 
 		public void ARAnchorAdded(ARPlaneAnchor planeAnchor)
 		{
+			#if !UNITY_EDITOR
 			serializableUnityARPlaneAnchor serPlaneAnchor = planeAnchor;
 			SendToEditor (ConnectionMessageIds.addPlaneAnchorMsgeId, serPlaneAnchor);
+			#endif
 		}
 
 		public void ARAnchorUpdated(ARPlaneAnchor planeAnchor)
 		{
+			#if !UNITY_EDITOR
 			serializableUnityARPlaneAnchor serPlaneAnchor = planeAnchor;
 			SendToEditor (ConnectionMessageIds.updatePlaneAnchorMsgeId, serPlaneAnchor);
+			#endif
 		}
 
 		public void ARAnchorRemoved(ARPlaneAnchor planeAnchor)
 		{
+			#if !UNITY_EDITOR
 			serializableUnityARPlaneAnchor serPlaneAnchor = planeAnchor;
 			SendToEditor (ConnectionMessageIds.removePlaneAnchorMsgeId, serPlaneAnchor);
+			#endif
 		}
 
 		public void ARFaceAnchorAdded(ARFaceAnchor faceAnchor)

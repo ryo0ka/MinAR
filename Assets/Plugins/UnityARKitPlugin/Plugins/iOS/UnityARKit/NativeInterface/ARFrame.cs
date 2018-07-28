@@ -1,6 +1,5 @@
 ﻿using System;
 
-#pragma warning disable 0169
 namespace UnityEngine.XR.iOS
 {
 	public struct ARFrame

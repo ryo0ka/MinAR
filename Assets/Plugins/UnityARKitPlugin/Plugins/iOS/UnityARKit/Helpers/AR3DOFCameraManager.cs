@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR.iOS;
 
-#pragma warning disable 0169
 public class AR3DOFCameraManager : MonoBehaviour {
 
     public Camera m_camera;

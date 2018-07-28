@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<nlog assertException="True">
+  <targets>
+    <target name="UnityConsole" type="UnityConsole" layout="${message} ${exception} -- (${callsite})" />
+  </targets>
+  <rules>
+    <logger name="*" namespace="*" target="UnityConsole" />
+  </rules>
+</nlog>

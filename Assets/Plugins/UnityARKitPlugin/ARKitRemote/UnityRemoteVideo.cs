@@ -3,7 +3,6 @@ using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-#pragma warning disable 0169
 namespace UnityEngine.XR.iOS
 {
 
@@ -22,7 +21,7 @@ namespace UnityEngine.XR.iOS
 		private GCHandle m_pinnedYArray;
 		private GCHandle m_pinnedUVArray;
 
-		#if !UNITY_EDITOR
+		#if !UNITY_EDITOR && UNITY_IOS
 
 		public void Start()
 		{

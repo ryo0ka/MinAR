@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR.iOS;
 
-#pragma warning disable 0169
 public class PointCloudParticleExample : MonoBehaviour {
     public ParticleSystem pointCloudParticlePrefab;
     public int maxPointsToShow;
@@ -29,7 +28,7 @@ public class PointCloudParticleExample : MonoBehaviour {
 	// Update is called once per frame
 	void Update () {
         if (frameUpdated) {
-            if (m_PointCloudData != null && m_PointCloudData.Length > 0) {
+            if (m_PointCloudData != null && m_PointCloudData.Length > 0 && maxPointsToShow > 0) {
                 int numParticles = Mathf.Min (m_PointCloudData.Length, maxPointsToShow);
                 ParticleSystem.Particle[] particles = new ParticleSystem.Particle[numParticles];
                 int index = 0;
@@ -38,6 +37,7 @@ public class PointCloudParticleExample : MonoBehaviour {
                     particles [index].startColor = new Color (1.0f, 1.0f, 1.0f);
                     particles [index].startSize = particleSize;
                     index++;
+                    if (index >= numParticles) break;
                 }
                 currentPS.SetParticles (particles, numParticles);
             } else {
