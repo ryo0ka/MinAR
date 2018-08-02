@@ -23,6 +23,11 @@ namespace BooAR
 				Debug.Log($"{message} -- ({_name})");
 		}
 
+		protected void LogWarning(object message)
+		{
+			Debug.LogWarning($"{message} -- ({_name})");
+		}
+
 		protected void LogException(Exception e)
 		{
 			if (!_disableDebugLog)

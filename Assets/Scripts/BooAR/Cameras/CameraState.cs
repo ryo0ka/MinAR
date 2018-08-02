@@ -14,7 +14,7 @@ namespace BooAR.Cameras
 		public void SetToMainCamera()
 		{
 			Log("SetToMainCamera()");
-			
+
 			_targetImage.texture = _mainCamera.Texture;
 			_mainCamera.enabled = true;
 		}
@@ -22,7 +22,7 @@ namespace BooAR.Cameras
 		public void SetToSubCamera(RenderTexture subCamera)
 		{
 			Log("SetToSubCamera()");
-			
+
 			_mainCamera.enabled = false;
 			_targetImage.texture = subCamera;
 		}

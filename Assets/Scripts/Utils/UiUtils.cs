@@ -8,5 +8,11 @@ namespace Utils
 		{
 			t.isOn = !t.isOn;
 		}
+
+		public static Toggle StartWith(this Toggle t, bool isOn)
+		{
+			t.isOn = isOn;
+			return t;
+		}
 	}
 }

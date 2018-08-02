@@ -1,4 +1,5 @@
-﻿using UniRx;
+﻿using Sirenix.OdinInspector;
+using UniRx;
 using UniRx.Triggers;
 using UnityEngine;
 using Utils;
@@ -24,6 +25,7 @@ namespace BooAR.Players
 #endif
 		}
 
+		[Button]
 		void RotatePlayer()
 		{
 			_player.Transform.SetLocalEulerAngles(

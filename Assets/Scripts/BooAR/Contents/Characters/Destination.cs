@@ -1,7 +1,9 @@
 ﻿using System;
 using BooAR.Levels;
+using BooAR.Players;
 using UniRx;
 using UnityEngine;
+using Utils;
 using Zenject;
 
 namespace BooAR.Contents.Characters
@@ -17,20 +19,24 @@ namespace BooAR.Contents.Characters
 		[Inject]
 		ILevelState _level;
 
+		[Inject]
+		IPlayer _player;
+
+		public Vector3 Position => transform.position;
+
 		void Awake()
 		{
 			SetVisible(false);
 		}
 
-		public IObservable<Unit> WaitUntilReached(Transform player)
+		public IObservable<Unit> OnPlayerReachedAsObservable()
 		{
 			SetVisible(true);
 
-			return transform.ObserveReached(player, _reachDistance)
+			return transform.ObserveReached(_player.Transform, _reachDistance)
 			                .TakeUntil(_level.OnEnded())
-			                .DoOnCompleted(() => SetVisible(false))
-			                .DoOnError(_ => SetVisible(false))
-			                .DoOnCancel(() => SetVisible(false));
+			                .FirstOrDefault()
+			                .DoOnEnd(() => SetVisible(false));
 		}
 
 		void SetVisible(bool visible)

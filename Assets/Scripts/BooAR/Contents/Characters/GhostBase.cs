@@ -1,4 +1,6 @@
-﻿using BooAR.Levels;
+﻿using BooAR.Cameras;
+using BooAR.Levels;
+using BooAR.Players;
 using UniRx;
 using Utils;
 using Zenject;
@@ -10,24 +12,36 @@ namespace BooAR.Contents.Characters
 		[Inject]
 		protected ILevelState _level;
 
+		[Inject]
+		protected IPlayer _player;
+
+		[Inject]
+		protected ICameraState _playerCamera;
+
 		protected readonly CompositeDisposable _life = new CompositeDisposable();
+		protected readonly CompositeDisposable _levelLife = new CompositeDisposable();
 
 		protected virtual void OnCreated()
 		{
 			_life.AddTo(this);
+			_levelLife.AddTo(this);
 		}
 
 		protected virtual void OnSpawned()
 		{
-			_level.OnFailed
+			_level.OnFailed()
 			      .SubscribeUnit(OnLevelFailed)
-			      .AddTo(this);
+			      .AddTo(_life);
 
-			_level.OnGoaled
+			_level.OnFailed()
 			      .SubscribeUnit(OnLevelGoaled)
-			      .AddTo(this);
+			      .AddTo(_life);
+
+			_level.OnEnded()
+			      .Subscribe(_ => _levelLife.Clear())
+			      .AddTo(_life);
 		}
-		
+
 		protected virtual void OnDespawned()
 		{
 			_life.Clear();

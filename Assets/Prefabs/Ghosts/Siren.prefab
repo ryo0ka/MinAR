@@ -22,7 +22,7 @@ GameObject:
   - component: {fileID: 33820632180732556}
   - component: {fileID: 23226038998666836}
   - component: {fileID: 136603876192494898}
-  m_Layer: 0
+  m_Layer: 12
   m_Name: Cylinder
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -40,7 +40,7 @@ GameObject:
   - component: {fileID: 33558022937433590}
   - component: {fileID: 23194523587800128}
   - component: {fileID: 65196784899417808}
-  m_Layer: 0
+  m_Layer: 12
   m_Name: Cube
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -57,7 +57,7 @@ GameObject:
   - component: {fileID: 4876100483720842}
   - component: {fileID: 20332461288108700}
   - component: {fileID: 114372481047149326}
-  m_Layer: 0
+  m_Layer: 12
   m_Name: Camera
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -75,7 +75,7 @@ GameObject:
   - component: {fileID: 33500846036380432}
   - component: {fileID: 23815094685910382}
   - component: {fileID: 135462230310246222}
-  m_Layer: 0
+  m_Layer: 12
   m_Name: Sphere
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -91,7 +91,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4614118989720370}
   - component: {fileID: 114153666620489256}
-  m_Layer: 0
+  m_Layer: 12
   m_Name: Siren
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -106,7 +106,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4638117458495352}
-  m_Layer: 0
+  m_Layer: 12
   m_Name: Body
   m_TagString: Untagged
   m_Icon: {fileID: 0}

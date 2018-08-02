@@ -1,8 +1,11 @@
-﻿using BooAR.Cameras;
+﻿using System;
+using BooAR.Cameras;
+using BooAR.Levels;
 using Sirenix.OdinInspector;
 using UniRx;
-using UniRx.Triggers;
 using UnityEngine;
+using UnityEngine.UI;
+using Utils;
 using Zenject;
 
 namespace BooAR.Contents.Characters
@@ -11,7 +14,6 @@ namespace BooAR.Contents.Characters
 	{
 		public struct Params
 		{
-			public Transform Player { get; set; }
 		}
 
 		public class Pool : MonoMemoryPool<Params, GhostSiren>
@@ -35,6 +37,9 @@ namespace BooAR.Contents.Characters
 			}
 		}
 
+		[Inject]
+		JackTogglePool _jackTogglePool;
+
 		[SerializeField]
 		TextureCamera _camera;
 
@@ -43,39 +48,57 @@ namespace BooAR.Contents.Characters
 
 		[SerializeField]
 		float _reach;
-		
-		Transform _player;
 
-		public RenderTexture View => _camera.Texture;
+		Toggle _jackToggle;
+
+		readonly Subject<Unit> _onReached = new Subject<Unit>();
+
+		public IObservable<Unit> OnReachedPlayerAsObservable => _onReached;
+
+		public IObservable<Unit> OnJackedAsObservable =>
+			_jackToggle.OnValueChangedAsObservable()
+			           .WhereTrue()
+			           .TakeUntil(_level.OnEnded());
+
+		protected override void OnCreated()
+		{
+			base.OnCreated();
+
+			_onReached.AddTo(this);
+		}
 
 		void OnSpawned(Params param)
 		{
 			base.OnSpawned();
-			
-			_player = param.Player;
 
-			transform.ObserveReached(_player, _reach)
-			         .Subscribe(_ => OnReached())
-			         .AddTo(_life);
+			transform.ObserveReached(_player.Transform, _reach)
+			         .SubscribeUnit(_onReached.OnNext)
+			         .AddTo(_life)
+			         .AddTo(_levelLife);
 
-			this.UpdateAsObservable()
-			    .Subscribe(_ => UpdateTransform())
-			    .AddTo(_life);
+			Observable.EveryUpdate()
+			          .Subscribe(_ => UpdateTransform())
+			          .AddTo(_life)
+			          .AddTo(_levelLife);
+
+			// Delay creation of toggle UI until this moment
+			_jackToggle = _jackTogglePool.Spawn(_life);
+			_jackToggle.isOn = false;
+			_jackToggle.OnValueChangedAsObservable()
+			           .Subscribe(SetJackActive)
+			           .AddTo(_life)
+			           .AddTo(_levelLife);
 		}
 
-		void OnReached()
-		{
-			_level.Fail();
-		}
-
-		public void SetActiveRendering(bool render)
+		void SetJackActive(bool render)
 		{
 			_camera.enabled = render;
+			_playerCamera.SetSubCameraActive(_camera.Texture, render);
 		}
 
 		void UpdateTransform()
 		{
-			_camera.transform.LookAt(_player);
+			_camera.transform.LookAt(_player.Transform);
 		}
 
 		[Button]

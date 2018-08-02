@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using BooAR.Levels;
 using Sirenix.OdinInspector;
 using UniRx.Async;
@@ -12,23 +10,8 @@ namespace BooAR.Contents
 {
 	public class LevelCollection : BaseBehaviour, ILevelCollection
 	{
-		[Serializable]
-		class SceneReference
-		{
-#pragma warning disable 649
-			[SerializeField, TableColumnWidth(50)]
-			int _index;
-
-			[SerializeField]
-			string _sceneName;
-#pragma warning restore 649
-
-			public int Index => _index;
-			public string SceneName => _sceneName;
-		}
-
-		[SerializeField, TableList]
-		List<SceneReference> _scenes;
+		[SerializeField]
+		List<string> _scenes;
 
 		[SerializeField, ReadOnly]
 		int _current;
@@ -95,7 +78,7 @@ namespace BooAR.Contents
 
 		string GetSceneName(int index)
 		{
-			return _scenes.First(l => l.Index == index).SceneName;
+			return _scenes[index];
 		}
 	}
 }

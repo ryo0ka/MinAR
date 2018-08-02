@@ -1,59 +1,17 @@
-﻿using System;
-using UniRx;
-using UnityEngine;
-using Utils;
-using Sirenix.OdinInspector;
+﻿using UniRx;
 
 namespace BooAR.Levels
 {
-	public class LevelState : BaseBehaviour, ILevelState
+	public class LevelState : ILevelState
 	{
-		readonly Subject<Unit> _onFailed = new Subject<Unit>();
-		readonly Subject<FloorOptions> _onStarted = new Subject<FloorOptions>();
-		readonly Subject<Unit> _onGoaled = new Subject<Unit>();
+		readonly ReactiveProperty<FloorOptions?> _begun = new ReactiveProperty<FloorOptions?>();
+		readonly ReactiveProperty<bool> _goaled = new ReactiveProperty<bool>();
+		readonly ReactiveProperty<bool> _failed = new ReactiveProperty<bool>();
+		readonly ReactiveProperty<bool> _cancelled = new ReactiveProperty<bool>();
 
-		[SerializeField, ReadOnly]
-		bool _goaled;
-
-		[SerializeField, ReadOnly]
-		bool _failed;
-
-		public bool Failed => _failed;
-		public bool Goaled => _goaled;
-
-		public IObservable<Unit> OnGoaled => _onGoaled;
-		public IObservable<Unit> OnFailed => _onFailed;
-		public FloorOptions Options { get; private set; }
-
-		void Awake()
-		{
-			_onFailed.AddTo(this);
-			_onStarted.AddTo(this);
-			_onGoaled.AddTo(this);
-		}
-
-		public void Begin(FloorOptions options)
-		{
-			Log($"Initialize({options})");
-
-			Options = options;
-			_goaled = false;
-			_failed = false;
-			_onStarted.OnNext(options);
-		}
-
-		public void Goal()
-		{
-			Log("Clear()");
-			_goaled = true;
-			_onGoaled.OnNext();
-		}
-
-		public void Fail()
-		{
-			Log("KillPlayer()");
-			_failed = true;
-			_onFailed.OnNext();
-		}
+		public IReactiveProperty<FloorOptions?> Begun => _begun;
+		public IReactiveProperty<bool> Goaled => _goaled;
+		public IReactiveProperty<bool> Failed => _failed;
+		public IReactiveProperty<bool> Cancelled => _cancelled;
 	}
 }

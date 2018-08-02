@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using UniRx;
 using UniRx.Async;
@@ -39,6 +40,11 @@ namespace Utils
 			return Disposable.Create(() => f(false));
 		}
 
+		public static IDisposable ToggleActive(GameObject gameObject)
+		{
+			return Toggle(gameObject.SetActive);
+		}
+
 		public static IDisposable ToggleReverse(Action<bool> f)
 		{
 			f(false);
@@ -66,11 +72,18 @@ namespace Utils
 			t.Forget(Debug.LogException);
 		}
 
-		public static CancellationToken NewCancellationToken(this CompositeDisposable d)
+		public static CancellationToken CancellationToken(this ICollection<IDisposable> d)
 		{
-			CancellationTokenSource s =	new CancellationTokenSource();
+			CancellationTokenSource s = new CancellationTokenSource();
 			d.Add(Disposable.Create(s.Cancel));
 
+			return s.Token;
+		}
+
+		public static CancellationToken CancellationToken<T>(this IObservable<T> o)
+		{
+			CancellationTokenSource s = new CancellationTokenSource();
+			o.Subscribe(_ => s.Cancel());
 			return s.Token;
 		}
 
@@ -84,6 +97,38 @@ namespace Utils
 		public static IObservable<T> First<T>(params IObservable<T>[] os)
 		{
 			return Observable.Merge(os).First();
+		}
+
+		public static IObservable<T> DoOnEnd<T>(this IObservable<T> o, Action f)
+		{
+			return o.DoOnCompleted(f)
+			        .DoOnCancel(f)
+			        .DoOnError(_ => f());
+		}
+
+		public static IObservable<Unit> WhereTrue(this IObservable<bool> b)
+		{
+			return b.Where(t => t).AsUnitObservable();
+		}
+
+		public static void Add(this ICollection<IDisposable> d, Action f)
+		{
+			d.Add(Disposable.Create(f));
+		}
+
+		public static IDisposable SubscribeAway<T>(this IObservable<T> o, Func<T, UniTask> f)
+		{
+			return o.Subscribe(t => f(t).Away());
+		}
+
+		public static UniTask<T> ToUniTask<T>(this IObservable<T> o, IObservable<T> canceller)
+		{
+			return o.ToUniTask(canceller.CancellationToken(), true);
+		}
+
+		public static UniTask Delay(this TimeSpan t)
+		{
+			return UniTask.Delay(t);
 		}
 	}
 }

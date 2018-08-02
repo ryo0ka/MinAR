@@ -3,6 +3,7 @@ using Zenject;
 
 namespace BooAR.Contents
 {
+	// Routes ILevelState instance to the root context via scene hierarchy
 	public class LevelScene : BaseBehaviour
 	{
 		[Inject]

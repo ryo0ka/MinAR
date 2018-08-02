@@ -1,9 +1,10 @@
 ﻿using BooAR.Contents.Characters;
+using BooAR.Levels;
 using UniRx;
 using UniRx.Async;
 using UnityEngine;
-using Utils;
 using Zenject;
+using Utils;
 
 namespace BooAR.Contents.Level0
 {
@@ -22,28 +23,32 @@ namespace BooAR.Contents.Level0
 		{
 			await base.Begin();
 
-			{
-				// Spawn a boo
-				GhostBoo boo = _booPool.Spawn(new GhostBoo.Params
-				{
-					Player = _player.Transform,
-				});
-
-				// Move the boo to the mid point
-				boo.transform.SetParent(_floor);
-				boo.transform.position = _midPoint.transform.position;
-				boo.transform.SetPosition(y: _player.Transform.position.y);
-			}
-
-			await _midPoint.WaitUntilReached(_player.Transform);
-
+			// Wait until player reaches the mid point
+			await _midPoint.OnPlayerReachedAsObservable();
 			CancelIfLevelEnded();
 
-			await _goalPoint.WaitUntilReached(_player.Transform);
+			SpawnBoo();
 
+			// Wait unitl player reaches the goal
+			await _goalPoint.OnPlayerReachedAsObservable();
 			CancelIfLevelEnded();
 
 			_level.Goal();
+		}
+
+		void SpawnBoo()
+		{
+			GhostBoo boo = _booPool.Spawn(new GhostBoo.Params(), _life);
+
+			boo.transform.SetParent(_floor);
+			boo.transform.position = _goalPoint.transform.position;
+			boo.transform.SetPosition(y: _player.Transform.position.y);
+
+			// Kill player when boo hits it
+			boo.OnReachedAsObservable
+			   .First()
+			   .Subscribe(_ => _player.Kill())
+			   .AddTo(_life);
 		}
 	}
 }

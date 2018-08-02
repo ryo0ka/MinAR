@@ -22,23 +22,16 @@ namespace BooAR.Contents
 				       MathUtils.Horizontal(p2 - p1));
 		}
 
-		public static IObservable<float> ObservePositionVelocity(this Transform t)
-		{
-			return t.UpdateAsObservable()
-			        .Select(_ => t.position)
-			        .Pairwise()
-			        .StartWith(new Pair<Vector3>(t.position, t.position))
-			        .Select(pp => Vector2.Distance(
-				        MathUtils.Horizontal(pp.Current),
-				        MathUtils.Horizontal(pp.Previous)))
-			        .Select(d => d / Time.deltaTime);
-		}
-
 		public static IObservable<Unit> ObserveReached(this Transform t, Transform target, float reach)
 		{
 			return t.UpdateAsObservable()
-			        .First(_ => HorizontalReached(t.position, target.position, reach))
+			        .FirstOrDefault(_ => HorizontalReached(t.position, target.position, reach))
 			        .AsUnitObservable();
+		}
+
+		public static IObservable<float> ToVelocity(this IObservable<Vector3> positions)
+		{
+			return positions.Pairwise().Select(p => Vector3.Distance(p.Previous, p.Current));
 		}
 	}
 }

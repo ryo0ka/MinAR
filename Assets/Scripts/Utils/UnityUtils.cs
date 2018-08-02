@@ -8,5 +8,10 @@ namespace Utils
 		{
 			c.enabled = enabled;
 		}
+
+		public static void DestroyGameObject(Component component)
+		{
+			Object.Destroy(component.gameObject);
+		}
 	}
 }

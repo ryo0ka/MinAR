@@ -344,7 +344,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _disableDebugLog: 0
-  _reachDistance: 2
-  _thresholdAngle: 120
-  _minVelocity: 0.5
+  _reachDistance: 1.5
+  _thresholdAngle: 60
+  _minVelocity: 0.01
   _playerSpeedCoeff: 1.2

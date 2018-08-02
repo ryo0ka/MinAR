@@ -1,10 +1,10 @@
-﻿using BooAR.Cameras;
+﻿using AnimeRx;
 using BooAR.Contents.Characters;
-using BooAR.Games;
+using BooAR.Levels;
 using UniRx;
 using UniRx.Async;
 using UnityEngine;
-using UnityEngine.UI;
+using Utils;
 using Zenject;
 
 namespace BooAR.Contents.Level1
@@ -14,20 +14,11 @@ namespace BooAR.Contents.Level1
 		[Inject]
 		GhostSiren.Pool _sirenPool;
 
-		[Inject]
-		ICameraState _camera;
-
-		[Inject]
-		IScreenState _screen;
-
 		[SerializeField]
 		Destination _midPoint;
 
 		[SerializeField]
 		Destination _goalPoint;
-
-		[SerializeField]
-		Toggle _jackPrefab;
 
 		GhostSiren _siren;
 
@@ -35,52 +26,41 @@ namespace BooAR.Contents.Level1
 		{
 			await base.Begin();
 
-			{
-				_siren = _sirenPool.Spawn(new GhostSiren.Params
-				{
-					Player = _player.Transform,
-				});
-
-				_siren.transform.SetParent(_floor);
-				_siren.transform.position = InitialSirenPosition();
-
-				_screen.Instantiate(_jackPrefab, out Toggle jack)
-				       .AddTo(this);
-
-				jack.OnValueChangedAsObservable()
-				    .Subscribe(OnJackToggled)
-				    .AddTo(this);
-
-				jack.isOn = false;
-			}
-
-			await _midPoint.WaitUntilReached(_player.Transform);
-
+			// Wait until player reaches the mid point
+			await _midPoint.OnPlayerReachedAsObservable();
 			CancelIfLevelEnded();
 
-			await _goalPoint.WaitUntilReached(_player.Transform);
+			SpawnSiren();
 
+			// Wait until player interact with jack toggle
+			await _siren.OnJackedAsObservable.ToUniTask(_level.OnEnded());
+			CancelIfLevelEnded();
+
+			// Wait until player reaches the goal
+			await _goalPoint.OnPlayerReachedAsObservable();
 			CancelIfLevelEnded();
 
 			_level.Goal();
 		}
 
-		void OnJackToggled(bool jack)
+		void SpawnSiren()
 		{
-			_siren.SetActiveRendering(jack);
-			if (jack) _camera.SetToSubCamera(_siren.View);
-			else _camera.SetToMainCamera();
-		}
+			_siren = _sirenPool.Spawn(new GhostSiren.Params(), _life);
+			_siren.transform.SetParent(_floor);
+			_siren.transform.position = (_startPoint.Position + _midPoint.Position) / 2f;
 
-		Vector3 InitialSirenPosition()
-		{
-			Vector3 startPos = _startPoint.transform.position;
-			Vector3 midPos = _midPoint.transform.position;
+			// Kill player when siren hits it
+			_siren.OnReachedPlayerAsObservable
+			      .FirstOrDefault()
+			      .Subscribe(_ => _player.Kill())
+			      .AddTo(_life);
 
-			Vector3 pos = (startPos + midPos) / 2f;
-			pos.y = _floor.position.y; // set it on the floor
-
-			return pos;
+			// Move siren between player and the goal
+			Observable.EveryFixedUpdate()
+			          .Select(f => f * Time.smoothDeltaTime) // seconds past
+			          .Select(s => Mathf.Sin(s / 2) * 3) // meters
+			          .SubscribeToLocalPositionX(_siren.transform)
+			          .AddTo(_life);
 		}
 	}
 }
