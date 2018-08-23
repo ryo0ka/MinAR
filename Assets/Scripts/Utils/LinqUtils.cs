@@ -22,5 +22,10 @@ namespace Utils
 				index += 1;
 			}
 		}
+
+		public static string ToStringPretty<T>(this IEnumerable<T> ts)
+		{
+			return "[" + string.Join(", ", ts) + "]";
+		}
 	}
 }

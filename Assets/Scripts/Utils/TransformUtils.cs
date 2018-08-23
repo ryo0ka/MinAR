@@ -30,5 +30,14 @@ namespace Utils
 			a.z = z ?? a.z;
 			t.position = a;
 		}
+
+		public static void SetLocalPosition(this Transform t, float? x = null, float? y = null, float? z = null)
+		{
+			Vector3 a = t.localPosition;
+			a.x = x ?? a.x;
+			a.y = y ?? a.y;
+			a.z = z ?? a.z;
+			t.localPosition = a;
+		}
 	}
 }

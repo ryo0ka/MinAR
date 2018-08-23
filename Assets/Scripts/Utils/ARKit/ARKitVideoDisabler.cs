@@ -8,13 +8,11 @@ namespace Utils.ARKit
 	{
 		void Awake()
 		{
-			if (Application.isEditor)
-			{
-				GetComponent<UnityARVideo>().enabled = false;
-				
-				Camera cam = GetComponent<Camera>();
-				cam.clearFlags = CameraClearFlags.Skybox;
-			}
+#if UNITY_EDITOR
+			GetComponent<UnityARVideo>().enabled = false;
+			Camera cam = GetComponent<Camera>();
+			cam.clearFlags = CameraClearFlags.Skybox;
+#endif
 		}
 	}
 }

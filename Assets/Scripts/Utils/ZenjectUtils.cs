@@ -6,7 +6,7 @@ namespace Utils
 {
 	public static class ZenjectUtils
 	{
-		public static T Spawn<T>(this IMemoryPool<T> p, ICollection<IDisposable> disposer)
+		public static T SpawnTo<T>(this IMemoryPool<T> p, ICollection<IDisposable> disposer)
 		{
 			T instance = p.Spawn();
 			disposer.Add(() => p.Despawn(instance));

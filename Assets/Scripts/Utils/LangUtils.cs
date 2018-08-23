@@ -4,6 +4,8 @@ namespace Utils
 {
 	public static class LangUtils
 	{
+		public static T Const<T>(T t) => t;
+
 		public static T[] EnumValues<T>()
 		{
 			return (T[]) Enum.GetValues(typeof(T));

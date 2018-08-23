@@ -1,0 +1,12 @@
+fileFormatVersion: 2
+guid: d73e5f6f66db8d64a83cd8c447cebdf9
+labels:
+- Data
+- PersistenceController
+- ScriptableObject
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
