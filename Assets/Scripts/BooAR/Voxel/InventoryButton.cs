@@ -53,7 +53,13 @@ namespace BooAR.Voxel
 		[Inject]
 		VoxelMeshSource _source;
 
-		public Button Button => _button;
+		public IObservable<Unit> OnClickAsObservable() => _button.OnClickAsObservable();
+
+		public bool Interactable
+		{
+			get => _button.interactable;
+			set => _button.interactable = value;
+		}
 
 		void OnCreated()
 		{

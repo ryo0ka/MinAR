@@ -10,6 +10,7 @@ namespace BooAR.Voxel
 {
 	public class BlockInventory : BaseBehaviour
 	{
+#pragma warning disable 649
 		[SerializeField]
 		Button _pickaxeButton;
 
@@ -21,81 +22,87 @@ namespace BooAR.Voxel
 
 		[SerializeField, ReadOnly]
 		InventoryButton[] _buttons;
+#pragma warning restore 649
 
 		Subject<Blocks> _blockSelection;
 		Subject<Unit> _pickaxeSelection;
-		Subject<Blocks> _blockRunout;
 
 		public IObservable<Blocks> OnBlockSelected => _blockSelection;
 		public IObservable<Unit> OnPickaxeSelected => _pickaxeSelection;
-		public IObservable<Blocks> OnBlockRunOut => _blockRunout;
 
 		void Awake()
 		{
 			_inventory = new int[BlocksUtils.All.Length];
 			_blockSelection = new Subject<Blocks>();
 			_pickaxeSelection = new Subject<Unit>();
-			_blockRunout = new Subject<Blocks>();
 			_buttons = new InventoryButton[BlocksUtils.All.Length];
 		}
 
 		void Start()
 		{
-			_pickaxeButton.OnClickAsObservable().Subscribe(_ =>
-			{
-				_pickaxeSelection.OnNext();
-			});
-
-			for (int i = 0; i < BlocksUtils.All.Length; i++)
-			{
-				Blocks block = (Blocks) i;
-
-				if (block == Blocks.Empty) continue;
-
-				_buttons[i] = _blockButtonPool.Spawn(new InventoryButton.Param
-				{
-					Block = block,
-				});
-
-				_buttons[i].Button.OnClickAsObservable().Subscribe(_ =>
-				{
-					_blockSelection.OnNext(block);
-				});
-			}
+			_pickaxeButton.OnClickAsObservable()
+			              .Subscribe(_ => OnPickaxeButtonPressed());
 		}
 
-		public int GetCount(Blocks block)
+		void OnPickaxeButtonPressed()
 		{
-			return _inventory[(int) block];
+			_pickaxeSelection.OnNext();
+		}
+
+		public bool HasBlock(Blocks block)
+		{
+			return _inventory[(int) block] > 0;
 		}
 
 		public void Add(Blocks block)
 		{
 			_inventory[(int) block] += 1;
 
-			if (_inventory[(int) block] == 1)
+			if (HasBlock(block) && _buttons[(int) block] == null)
 			{
-				_buttons[(int) block].Button.interactable = true;
+				InitializeBlockButton(block);
 			}
 
-			UpdateButtonCount(block);
+			UpdateButtonView(block);
 		}
 
 		public void Substract(Blocks block)
 		{
 			_inventory[(int) block] -= 1;
-
-			if (_inventory[(int) block] <= 0)
-			{
-				_buttons[(int) block].Button.interactable = false;
-				_blockRunout.OnNext(block);
-			}
-
-			UpdateButtonCount(block);
+			UpdateButtonView(block);
 		}
 
-		void UpdateButtonCount(Blocks block)
+		void InitializeBlockButton(Blocks block)
 		{
+			// Don't make a button for the "empty" block type
+			if (block == Blocks.Empty) return;
+
+			// Spawn (intiialize) a button for this block type
+			InventoryButton button = _blockButtonPool.Spawn(new InventoryButton.Param
+			{
+				Block = block,
+			});
+
+			// Set events to the button
+			button.OnClickAsObservable()
+			      .Subscribe(_ => OnBlockButtonPressed(block));
+
+			// Set to the button list
+			_buttons[(int) block] = button;
+		}
+
+		void OnBlockButtonPressed(Blocks block)
+		{
+			_blockSelection.OnNext(block);
+		}
+
+		// Update the count text view on the button of the block
+		void UpdateButtonView(Blocks block)
+		{
+			// Button should be interactable only if the block exists in inventory
+			_buttons[(int) block].Interactable = HasBlock(block);
+
+			// Button's count text should refect the block's current amount in inventory
 			_buttons[(int) block].SetCount(_inventory[(int) block]);
 		}
 	}

@@ -102,7 +102,12 @@ namespace BooAR.Voxel
 			}
 		}
 
-		void CalculateFace(Faces outbound, Lookup? lastVoxSrc, Lookup? thisVoxSrc, out Faces face, out Blocks block)
+		void CalculateFace(
+			Faces outbound,
+			Lookup? lastVoxSrc,
+			Lookup? thisVoxSrc,
+			out Faces face,
+			out Blocks block)
 		{
 			if (lastVoxSrc.HasValue && thisVoxSrc.HasValue)
 			{

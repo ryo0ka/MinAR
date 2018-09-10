@@ -6,11 +6,12 @@ using Utils;
 
 namespace BooAR.Voxel
 {
-	public class BlockAttributeTable : BaseScriptableObject
+	public class VoxelSettings : BaseScriptableObject, ITerrainGenerator, IBlockAttributeTable
 	{
 		[Serializable]
 		struct Param
 		{
+#pragma warning disable 649
 			[SerializeField]
 			public string Key;
 
@@ -25,6 +26,10 @@ namespace BooAR.Voxel
 
 			[SerializeField]
 			public Visibilities Visibility;
+
+			[SerializeField]
+			public int Durability;
+#pragma warning restore 649
 		}
 
 		// need a key for each block type
@@ -74,7 +79,7 @@ namespace BooAR.Voxel
 			return ps;
 		}
 
-		public Blocks AskBlock(Vector3i position)
+		public Blocks GenerateBlock(Vector3i position)
 		{
 			using (UnityUtils.Sample("TerrainGenerator.Ask()"))
 			{
@@ -98,6 +103,11 @@ namespace BooAR.Voxel
 		public Visibilities GetVisibility(Blocks block)
 		{
 			return _params[(int) block].Visibility;
+		}
+
+		public int GetDurability(Blocks block)
+		{
+			return _params[(int) block].Durability;
 		}
 	}
 }

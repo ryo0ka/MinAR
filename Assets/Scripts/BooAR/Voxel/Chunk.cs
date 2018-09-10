@@ -37,6 +37,12 @@ namespace BooAR.Voxel
 			}
 		}
 
+		struct BlockState
+		{
+			public int Durability { get; set; }
+		}
+
+#pragma warning disable 649
 		[SerializeField]
 		MeshFilter _filter;
 
@@ -50,13 +56,18 @@ namespace BooAR.Voxel
 		VoxelMeshSource _source;
 
 		[Inject]
+		IBlockAttributeTable _table;
+
+		[Inject]
 		IGlobalBlockLookup _globalLookup;
+#pragma warning restore 649
 
 		readonly CompositeDisposable _life = new CompositeDisposable();
 		Subject<Unit> _updateMesh;
 		Vector3i _chunkPosition;
 		ReusableCanceller _quadUpdates;
 		Array3<Blocks> _blocks;
+		Array3<BlockState> _damages;
 		VoxelQuadBuilder _quadBuilder;
 		VoxelMeshBuilder _meshBuilder;
 		BlocksSerializer _serializer;
@@ -68,6 +79,7 @@ namespace BooAR.Voxel
 			_life.AddTo(this);
 			_quadUpdates = new ReusableCanceller();
 			_blocks = new Array3<Blocks>(_length);
+			_damages = new Array3<BlockState>(_length);
 			_serializer = new BlocksSerializer(_length);
 			_meshBuilder = new VoxelMeshBuilder(1024);
 			_renderer.sharedMaterials = _source.BlockMaterials;
@@ -86,22 +98,7 @@ namespace BooAR.Voxel
 				name = $"Chunk({_chunkPosition})";
 				_filter.sharedMesh = new Mesh {indexFormat = IndexFormat.UInt32};
 
-				TimeSpan updateFrequency = 0.075f.Seconds();
-				_updateMesh = new Subject<Unit>().AddTo(_life);
-
-				// Check if a QUADS update is queued every once in a while.
-				// If queued, update the quads on a background thread.
-				Observable.Interval(updateFrequency, Scheduler.ThreadPool)
-				          .Where(_ => _mustUpdateQuads)
-				          .Subscribe(_ => UpdateQuads())
-				          .AddTo(_life);
-
-				// When a MESH update is queued, update the mesh on the main thread.
-				_updateMesh.ObserveOnMainThread()
-				           .ThrottleFrame(1) // up to once every frame
-				           .Subscribe(_ => UpdateMesh())
-				           .AddTo(_life);
-
+				InitiateUpdates();
 				QueueUpdate();
 			}
 		}
@@ -118,9 +115,51 @@ namespace BooAR.Voxel
 			name = $"Chunk(null)";
 		}
 
+		public Lookup LookUp(Vector3i position)
+		{
+			Blocks block = GetBlock(position);
+			Visibilities visibility = _table.GetVisibility(block);
+			return new Lookup(block, visibility);
+		}
+
 		public Blocks GetBlock(Vector3i position)
 		{
 			return _blocks[position];
+		}
+
+		public float GetDurability(Vector3i position)
+		{
+			Blocks block = _blocks[position];
+			int initDurability = _table.GetDurability(block);
+			int durability = _damages[position].Durability;
+			return (float) durability / initDurability;
+		}
+
+		public int DamageBlock(Vector3i position, int damage)
+		{
+			Blocks block = _blocks[position];
+
+			// Can't break the thin air
+			Debug.Assert(block != Blocks.Empty);
+
+			BlockState state = _damages[position];
+			if (state.Durability <= 0) // if first time hit:
+			{
+				// Initialize durability
+				state.Durability = _table.GetDurability(block);
+			}
+
+			// Deal damage
+			state.Durability -= damage;
+			_damages[position] = state;
+
+			if (state.Durability <= 0)
+			{
+				// Break block if durability exceeded
+				SetBlock(position, Blocks.Empty);
+			}
+
+			return Mathf.Max(0, state.Durability);
 		}
 
 		public bool SetBlock(Vector3i position, Blocks block)
@@ -129,6 +168,7 @@ namespace BooAR.Voxel
 			if (_blocks[position] == block) return false; // skip already-punched
 
 			_blocks[position] = block;
+			_damages[position] = new BlockState(); // initialize damage state
 
 			QueueUpdate();
 			return true;
@@ -150,27 +190,52 @@ namespace BooAR.Voxel
 			_mustUpdateQuads = true;
 		}
 
-		void UpdateQuads()
+		void InitiateUpdates()
+		{
+			_updateMesh?.Dispose();
+			_updateMesh = new Subject<Unit>().AddTo(_life);
+
+			TimeSpan updateFrequency = 0.075f.Seconds();
+
+			// Check if a QUADS update is queued every once in a while.
+			// If queued, update the quads on a worker thread.
+			Observable.Interval(updateFrequency, Scheduler.ThreadPool)
+			          .Where(_ => _mustUpdateQuads)
+			          .Subscribe(_ => UpdateQuads())
+			          .AddTo(_life);
+
+			// When a MESH update is queued, update the mesh on the main thread.
+			_updateMesh.ObserveOnMainThread()
+			           .ThrottleFrame(1) // up to once every frame
+			           .Subscribe(_ => UpdateMesh())
+			           .AddTo(_life);
+		}
+
+		void UpdateQuads() // Executed in a worker thread
 		{
 			if (!_mustUpdateQuads) return;
 			_mustUpdateQuads = false;
 
-			_quadUpdates.Cancel(); // cancel the ongoing update
+			// cancel the ongoing update
+			_quadUpdates.Cancel();
 
 			lock (_quadUpdates) // wait until the last update is done or cancelled
 			{
 				try
 				{
 					CancellationToken token = _quadUpdates.Token;
-					
-					while (_isUpdatingMesh) // wait until mesh update is done
+
+					// wait until mesh update is done
+					while (_isUpdatingMesh)
 					{
 						token.ThrowIfCancellationRequested();
 					}
 
 					var quads = _quadBuilder.Build(token);
 					_meshBuilder.Update(quads, token);
-					_updateMesh.OnNext(); // update mesh in the next frame
+
+					// Queue mesh update (for the next frame)
+					_updateMesh.OnNext();
 				}
 				catch (OperationCanceledException)
 				{

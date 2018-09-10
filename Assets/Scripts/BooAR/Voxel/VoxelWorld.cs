@@ -9,11 +9,9 @@ namespace BooAR.Voxel
 	[Serializable]
 	public class VoxelWorld : BaseBehaviour, IGlobalBlockLookup
 	{
+#pragma warning disable 649
 		[SerializeField]
 		ChunksSerializer _serializer;
-
-		[SerializeField]
-		BlockAttributeTable _table;
 
 		[SerializeField]
 		Vector3i _initialExtent;
@@ -25,7 +23,14 @@ namespace BooAR.Voxel
 		float _blockSize;
 
 		[Inject]
+		ITerrainGenerator _terrain;
+
+		[Inject]
+		IBlockAttributeTable _table;
+
+		[Inject]
 		Chunk.Pool _chunkPool;
+#pragma warning restore 649
 
 		Dictionary<Vector3i, Chunk> _chunks;
 		ISet<Vector3i> _neighbors;
@@ -41,8 +46,6 @@ namespace BooAR.Voxel
 
 			transform.position = -_rootPos;
 			transform.localScale = new Vector3(_blockSize, _blockSize, _blockSize);
-
-			_table.Initialize();
 		}
 
 		public void PopulateInitialBlocks()
@@ -103,30 +106,51 @@ namespace BooAR.Voxel
 			return chunk.GetBlock(blockPosition);
 		}
 
+		public bool DamageBlock(Vector3i position, int damage)
+		{
+			using (UnityUtils.Sample("VoxelWorld.DamageBlock()"))
+			{
+				(Vector3i chunkPosition, Vector3i blockPosition) = GlobalToLocal(position);
+				Chunk chunk = GetOrAddChunk(chunkPosition);
+
+				if (chunk.DamageBlock(blockPosition, damage) == 0) // block destroyed
+				{
+					UpdateNeighborChunk(chunkPosition, blockPosition);
+					return true;
+				}
+
+				return false;
+			}
+		}
+
 		public void SetBlock(Vector3i position, Blocks block)
 		{
 			using (UnityUtils.Sample("VoxelWorld.SetBlock()"))
 			{
 				(Vector3i chunkPosition, Vector3i blockPosition) = GlobalToLocal(position);
-
 				Chunk chunk = GetOrAddChunk(chunkPosition);
-				bool blockDidChange = chunk.SetBlock(blockPosition, block);
 
-				if (!blockDidChange) return;
-
-				// set neighboring chunks dirty
-				_neighbors.Clear();
-				VoxelUtils.FindNeighbors(_chunkLength, blockPosition, _neighbors);
-				foreach (Vector3i delta in _neighbors)
+				if (chunk.SetBlock(blockPosition, block)) // block placed
 				{
-					Vector3i neighborChunkPosition = chunkPosition + delta;
-
-					// Do spawn the neighbor chunk if it doesn't exist
-					// because their blocks must be visible if the set block is Empty.
-					Chunk neighborChunk = GetOrAddChunk(neighborChunkPosition);
-
-					neighborChunk.QueueUpdate();
+					UpdateNeighborChunk(chunkPosition, blockPosition);
 				}
+			}
+		}
+
+		void UpdateNeighborChunk(Vector3i chunkPosition, Vector3i blockPosition)
+		{
+			// set neighboring chunks dirty
+			_neighbors.Clear();
+			VoxelUtils.FindNeighbors(_chunkLength, blockPosition, _neighbors);
+			foreach (Vector3i delta in _neighbors)
+			{
+				Vector3i neighborChunkPosition = chunkPosition + delta;
+
+				// Do spawn the neighbor chunk if it doesn't exist
+				// because their blocks must be visible if the set block is Empty.
+				Chunk neighborChunk = GetOrAddChunk(neighborChunkPosition);
+
+				neighborChunk.QueueUpdate();
 			}
 		}
 
@@ -163,7 +187,7 @@ namespace BooAR.Voxel
 				{
 					Vector3i localPosition = new Vector3i(x, y, z);
 					Vector3i globalPosition = LocalToGlobal(chunkPosition, new Vector3i(x, y, z));
-					chunk.SetBlock(localPosition, _table.AskBlock(globalPosition));
+					chunk.SetBlock(localPosition, _terrain.GenerateBlock(globalPosition));
 				}
 			}
 		}
@@ -172,18 +196,12 @@ namespace BooAR.Voxel
 		{
 			(Vector3i chunkPosition, Vector3i blockPosition) = GlobalToLocal(globalBlockPosition);
 
-			if (_chunks.TryGetValue(chunkPosition, out Chunk targetChunk))
+			if (_chunks.TryGetValue(chunkPosition, out Chunk chunk))
 			{
-				Blocks block = targetChunk.GetBlock(blockPosition);
-				return new Lookup(block, GetVisible(block));
+				return chunk.LookUp(blockPosition);
 			}
 
 			return null;
-		}
-
-		Visibilities GetVisible(Blocks block)
-		{
-			return _table.GetVisibility(block);
 		}
 
 		Vector3i LocalToGlobal(Vector3i chunkPosition, Vector3i blockPosition)

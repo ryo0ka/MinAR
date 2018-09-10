@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using BooAR.Haptics;
+using UnityEngine;
 using Zenject;
 
 namespace BooAR.Voxel
@@ -32,6 +33,9 @@ namespace BooAR.Voxel
 		[SerializeField]
 		Transform _inventoryRoot;
 
+		[SerializeField]
+		VoxelSettings _table;
+
 		public override void InstallBindings()
 		{
 			Container.BindInstance(_chunkLength).WithId(Ids.ChunkLength);
@@ -47,6 +51,18 @@ namespace BooAR.Voxel
 			Container.BindMemoryPool<InventoryButton, InventoryButton.Pool>()
 			         .FromComponentInNewPrefab(_inventoryButtonPrefab)
 			         .UnderTransform(_inventoryRoot);
+
+			Container.QueueForInject(_table);
+			Container.BindInstance<ITerrainGenerator>(_table);
+			Container.BindInstance<IBlockAttributeTable>(_table);
+
+#if UNITY_IOS
+			Container.Bind<IHapticFeedbackGenerator>()
+			         .To<TouchHapticFeedbackGenerator>()
+			         .AsSingle();
+#endif
+
+			_table.Initialize(); // initialize here
 		}
 	}
 }

@@ -1,14 +1,17 @@
-﻿using Sirenix.OdinInspector;
+﻿using BooAR.Haptics;
+using Sirenix.OdinInspector;
 using UniRx;
 using UniRx.Triggers;
 using UnityEngine;
 using Utils;
 using UnityEngine.UI;
+using Zenject;
 
 namespace BooAR.Voxel
 {
 	public class VoxelGameController : BaseBehaviour
 	{
+#pragma warning disable 649
 		[SerializeField]
 		Camera _camera;
 
@@ -30,6 +33,10 @@ namespace BooAR.Voxel
 		[SerializeField]
 		int _bodyExtent;
 
+		[Inject]
+		IHapticFeedbackGenerator _haptics;
+#pragma warning restore 649
+
 		Blocks? _placedBlock;
 
 		void Start()
@@ -44,13 +51,12 @@ namespace BooAR.Voxel
 
 			// Raycast update
 			_screen.OnClickAsObservable()
-			       .Merge(_screen.OnDragAsObservable().AsUnitObservable())
+			       //.Merge(_screen.OnDragAsObservable().AsUnitObservable())
 			       .Subscribe(r => OnRaycast(GetRay()));
 
 			// Connect with block inventory
-			_inventory.OnBlockSelected.Subscribe(block => _placedBlock = block);
-			_inventory.OnPickaxeSelected.Subscribe(_ => _placedBlock = null);
-			_inventory.OnBlockRunOut.Subscribe(_ => _placedBlock = null);
+			_inventory.OnBlockSelected.Subscribe(OnBlockButtonSelected);
+			_inventory.OnPickaxeSelected.Subscribe(_ => OnPickaxeButtonSelected());
 		}
 
 		void OnPlayerPositionChanged(Vector3i position)
@@ -85,30 +91,68 @@ namespace BooAR.Voxel
 				VoxelRaycast.Raycast(ray.origin, ray.direction, 10f, null, (position, face) =>
 				{
 					Blocks block = _voxels.GetBlockOrInit(position);
-					if (block == Blocks.Empty)
+					if (block != Blocks.Empty)
 					{
-						return false;
+						OnBlockSelected(position, block, face);
+						return true; // End tracing
 					}
 
-					OnBlockSelected(position, block, face);
-					return true; // End the tracing
+					return false; // Continue tracing
 				});
 			}
 		}
 
+		void OnBlockButtonSelected(Blocks block)
+		{
+			_placedBlock = block;
+			
+			_haptics.Trigger(HapticFeedbackTypes.Selection);
+		}
+
+		void OnPickaxeButtonSelected()
+		{
+			_placedBlock = null;
+			
+			_haptics.Trigger(HapticFeedbackTypes.Selection);
+		}
+
 		void OnBlockSelected(Vector3i position, Blocks block, Vector3i face)
 		{
-			if (_placedBlock == null) // picking a selected block
+			if (_placedBlock == null)
 			{
-				_voxels.SetBlock(position, Blocks.Empty);
-				_inventory.Add(block);
+				DamageBlock(position, block);
 			}
-			else // placing a block from inventory
+			else
 			{
-				Blocks placedBlock = _placedBlock.Value;
+				PlaceBlock(position + face, _placedBlock.Value);
+			}
+		}
 
-				_voxels.SetBlock(position + face, placedBlock);
+		void DamageBlock(Vector3i position, Blocks block)
+		{
+			if (_voxels.DamageBlock(position, 1)) // if block destroyed
+			{
+				_inventory.Add(block);
+				_haptics.Trigger(HapticFeedbackTypes.ImpactHeavy);
+			}
+			else // if block damaged (but not destroyed)
+			{
+				_haptics.Trigger(HapticFeedbackTypes.ImpactLight);
+			}
+		}
+
+		void PlaceBlock(Vector3i position, Blocks block)
+		{
+			if (_inventory.HasBlock(block))
+			{
+				_voxels.SetBlock(position, block);
 				_inventory.Substract(block);
+
+				_haptics.Trigger(HapticFeedbackTypes.ImpactMedium);
+			}
+			else
+			{
+				_haptics.Trigger(HapticFeedbackTypes.Failure);
 			}
 		}
 

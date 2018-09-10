@@ -9,7 +9,7 @@ MonoBehaviour:
   m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7fb75ba3f2ad9884aa90639241ad6fcf, type: 3}
-  m_Name: BlockAttributeTable
+  m_Name: VoxelSettings
   m_EditorClassIdentifier: 
   serializationData:
     SerializedFormat: 2
@@ -26,18 +26,22 @@ MonoBehaviour:
     Octave: 0
     Threshold: 0
     Visibility: 0
+    Durability: 0
   - Key: Stone
     Scale: 0
     Octave: 0
     Threshold: 0
     Visibility: 1
+    Durability: 1
   - Key: Coal
     Scale: 3
     Octave: 2
     Threshold: 0.2
     Visibility: 1
+    Durability: 2
   - Key: Iron
     Scale: 2.5
     Octave: 2
     Threshold: 0.25
     Visibility: 1
+    Durability: 3
