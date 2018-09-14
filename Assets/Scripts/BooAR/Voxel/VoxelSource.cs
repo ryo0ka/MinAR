@@ -7,11 +7,15 @@ using UnityEngine;
 namespace BooAR.Voxel
 {
 	[Serializable]
-	public class VoxelMeshSource
+	public class VoxelSource
 	{
 		[SerializeField]
 		Material[] _materials;
 
+		[SerializeField]
+		Material _damageMaterial;
+
 		public Material[] BlockMaterials => _materials;
+		public Material DamageMaterial => _damageMaterial;
 	}
 }

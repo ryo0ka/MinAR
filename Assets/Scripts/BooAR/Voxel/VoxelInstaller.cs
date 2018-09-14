@@ -6,20 +6,8 @@ namespace BooAR.Voxel
 {
 	public class VoxelInstaller : MonoInstaller
 	{
-		public enum Ids
-		{
-			ChunkLength,
-			BlockSize,
-		}
-
 		[SerializeField]
-		int _chunkLength;
-
-		[SerializeField]
-		float _blockSize;
-
-		[SerializeField]
-		VoxelMeshSource _meshSource;
+		VoxelSource _meshSource;
 
 		[SerializeField]
 		Chunk _chunkPrefab;
@@ -28,18 +16,19 @@ namespace BooAR.Voxel
 		VoxelWorld _voxels;
 
 		[SerializeField]
-		InventoryButton _inventoryButtonPrefab;
+		BlockInventoryButton _inventoryButtonPrefab;
 
 		[SerializeField]
 		Transform _inventoryRoot;
+
+		[SerializeField]
+		BlockParticleSystem _particlesPrefab;
 
 		[SerializeField]
 		VoxelSettings _table;
 
 		public override void InstallBindings()
 		{
-			Container.BindInstance(_chunkLength).WithId(Ids.ChunkLength);
-			Container.BindInstance(_blockSize).WithId(Ids.BlockSize);
 			Container.BindInstance(_meshSource);
 
 			Container.BindMemoryPool<Chunk, Chunk.Pool>()
@@ -48,13 +37,19 @@ namespace BooAR.Voxel
 
 			Container.BindInstance<IGlobalBlockLookup>(_voxels);
 
-			Container.BindMemoryPool<InventoryButton, InventoryButton.Pool>()
+			Container.BindMemoryPool<BlockInventoryButton, BlockInventoryButton.Pool>()
 			         .FromComponentInNewPrefab(_inventoryButtonPrefab)
 			         .UnderTransform(_inventoryRoot);
 
 			Container.QueueForInject(_table);
 			Container.BindInstance<ITerrainGenerator>(_table);
 			Container.BindInstance<IBlockAttributeTable>(_table);
+
+			Container.BindMemoryPool<BlockParticleSystem, BlockParticleSystem.Pool>()
+			         .FromComponentInNewPrefab(_particlesPrefab)
+			         .UnderTransform(_voxels.transform);
+
+			Container.Bind<BlockParticleSystemController>().AsSingle();
 
 #if UNITY_IOS
 			Container.Bind<IHapticFeedbackGenerator>()

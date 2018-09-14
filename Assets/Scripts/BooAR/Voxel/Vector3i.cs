@@ -80,7 +80,7 @@ namespace BooAR.Voxel
 			}
 		}
 
-		bool Equals(Vector3i other) => x == other.x && y == other.y && z == other.z;
+		bool Equals(Vector3i o) => x == o.x && y == o.y && z == o.z;
 		public override bool Equals(object o) => !ReferenceEquals(null, o) && o is Vector3i i && Equals(i);
 		public override string ToString() => $"({x}, {y}, {z})";
 

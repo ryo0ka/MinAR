@@ -15,13 +15,13 @@ namespace BooAR.Voxel
 		Button _pickaxeButton;
 
 		[Inject]
-		InventoryButton.Pool _blockButtonPool;
+		BlockInventoryButton.Pool _blockButtonPool;
 
 		[SerializeField, ReadOnly]
 		int[] _inventory;
 
 		[SerializeField, ReadOnly]
-		InventoryButton[] _buttons;
+		BlockInventoryButton[] _buttons;
 #pragma warning restore 649
 
 		Subject<Blocks> _blockSelection;
@@ -35,7 +35,7 @@ namespace BooAR.Voxel
 			_inventory = new int[BlocksUtils.All.Length];
 			_blockSelection = new Subject<Blocks>();
 			_pickaxeSelection = new Subject<Unit>();
-			_buttons = new InventoryButton[BlocksUtils.All.Length];
+			_buttons = new BlockInventoryButton[BlocksUtils.All.Length];
 		}
 
 		void Start()
@@ -78,7 +78,7 @@ namespace BooAR.Voxel
 			if (block == Blocks.Empty) return;
 
 			// Spawn (intiialize) a button for this block type
-			InventoryButton button = _blockButtonPool.Spawn(new InventoryButton.Param
+			BlockInventoryButton button = _blockButtonPool.Spawn(new BlockInventoryButton.Param
 			{
 				Block = block,
 			});

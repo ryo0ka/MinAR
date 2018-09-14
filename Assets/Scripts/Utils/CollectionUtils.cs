@@ -20,5 +20,16 @@ namespace Utils
 		{
 			return (c.Count < index) ? c[index] : c[index] = def();
 		}
+
+		public static bool TryGetValue<V>(this V[] vs, int index, out V v) where V : class
+		{
+			v = vs[index];
+			return v != null;
+		}
+
+		public static void Clear(this Array a)
+		{
+			Array.Clear(a, 0, a.Length);
+		}
 	}
 }

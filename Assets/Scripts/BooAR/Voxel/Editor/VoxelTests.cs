@@ -7,6 +7,18 @@ namespace BooAR.Voxel.Editor
 	class VoxelTestsbase
 	{
 		[Test]
+		public void Vector3i_Equals()
+		{
+			Assert.AreEqual(
+				new Vector3i(0, 1, -2).GetHashCode(),
+				new Vector3i(0, 1, -2).GetHashCode());
+
+			Assert.AreEqual(
+				new Vector3i(0, 1, -2),
+				new Vector3i(0, 1, -2));
+		}
+
+		[Test]
 		public void VoxelUtils_WorldToLocalPosition_PositiveMin()
 		{
 			Assert.AreEqual(

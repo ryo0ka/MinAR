@@ -49,11 +49,11 @@ namespace BooAR.Voxel
 		[SerializeField]
 		MeshRenderer _renderer;
 
-		[Inject(Id = VoxelInstaller.Ids.ChunkLength)]
-		int _length;
+		[SerializeField]
+		BlockDamageMeshGenerator _damageMesh;
 
 		[Inject]
-		VoxelMeshSource _source;
+		VoxelSource _source;
 
 		[Inject]
 		IBlockAttributeTable _table;
@@ -63,29 +63,28 @@ namespace BooAR.Voxel
 #pragma warning restore 649
 
 		readonly CompositeDisposable _life = new CompositeDisposable();
-		Subject<Unit> _updateMesh;
+		readonly ReusableCanceller _blockUpdateCanceller = new ReusableCanceller();
+		readonly UpdateQueue _blockUpdateQueue = new UpdateQueue(.075f.Seconds());
+		readonly UpdateQueue _damageUpdateQueue = new UpdateQueue(.075f.Seconds());
+
 		Vector3i _chunkPosition;
-		ReusableCanceller _quadUpdates;
 		Array3<Blocks> _blocks;
-		Array3<BlockState> _damages;
+		Array3<BlockState> _healths;
 		VoxelQuadBuilder _quadBuilder;
 		VoxelMeshBuilder _meshBuilder;
 		BlocksSerializer _serializer;
-		bool _mustUpdateQuads;
-		bool _isUpdatingMesh;
 
 		void OnCreated()
 		{
 			_life.AddTo(this);
-			_quadUpdates = new ReusableCanceller();
-			_blocks = new Array3<Blocks>(_length);
-			_damages = new Array3<BlockState>(_length);
-			_serializer = new BlocksSerializer(_length);
-			_meshBuilder = new VoxelMeshBuilder(1024);
+			_blocks = new Array3<Blocks>(VoxelConsts.ChunkLength);
+			_healths = new Array3<BlockState>(VoxelConsts.ChunkLength);
+			_serializer = new BlocksSerializer(VoxelConsts.ChunkLength);
+			_meshBuilder = new VoxelMeshBuilder(1024, BlocksUtils.All.Length);
 			_renderer.sharedMaterials = _source.BlockMaterials;
-			_quadBuilder = new VoxelQuadBuilder(1024, _length, blockPosition =>
+			_quadBuilder = new VoxelQuadBuilder(1024, VoxelConsts.ChunkLength, blockPosition =>
 			{
-				Vector3i p = VoxelUtils.LocalToWorld(_length, _chunkPosition, blockPosition);
+				Vector3i p = VoxelUtils.LocalToWorld(VoxelConsts.ChunkLength, _chunkPosition, blockPosition);
 				return _globalLookup.Lookup(p);
 			});
 		}
@@ -98,7 +97,7 @@ namespace BooAR.Voxel
 				name = $"Chunk({_chunkPosition})";
 				_filter.sharedMesh = new Mesh {indexFormat = IndexFormat.UInt32};
 
-				InitiateUpdates();
+				InitiateUpdaters();
 				QueueUpdate();
 			}
 		}
@@ -106,8 +105,10 @@ namespace BooAR.Voxel
 		void OnDespawned()
 		{
 			_life.Clear();
-			_quadUpdates.Cancel();
+			_blockUpdateCanceller.Cancel();
 			_meshBuilder.Clear();
+			_damageMesh.ResetHealthAll();
+			_damageUpdateQueue.QueueUpdate();
 
 			Destroy(_filter.sharedMesh);
 			_filter.sharedMesh = null;
@@ -127,39 +128,45 @@ namespace BooAR.Voxel
 			return _blocks[position];
 		}
 
-		public float GetDurability(Vector3i position)
+		float GetDurability(Vector3i position)
 		{
 			Blocks block = _blocks[position];
 			int initDurability = _table.GetDurability(block);
-			int durability = _damages[position].Durability;
+			int durability = _healths[position].Durability;
 			return (float) durability / initDurability;
 		}
 
-		public int DamageBlock(Vector3i position, int damage)
+		// Returns durability (remainig health in 0~1f) of the block
+		public float DamageBlock(Vector3i position, int damage)
 		{
 			Blocks block = _blocks[position];
 
 			// Can't break the thin air
 			Debug.Assert(block != Blocks.Empty);
 
-			BlockState state = _damages[position];
+			BlockState state = _healths[position];
+			int maxHealth = _table.GetDurability(block);
 			if (state.Durability <= 0) // if first time hit:
 			{
 				// Initialize durability
-				state.Durability = _table.GetDurability(block);
+				state.Durability = maxHealth;
 			}
 
 			// Deal damage
 			state.Durability -= damage;
-			_damages[position] = state;
+			_healths[position] = state;
 
-			if (state.Durability <= 0)
+			float durability = Mathf.Max(0f, (float) state.Durability / maxHealth);
+			_damageMesh.UpdateHealth(position, durability);
+			_damageUpdateQueue.QueueUpdate();
+
+			if (durability <= 0)
 			{
 				// Break block if durability exceeded
 				SetBlock(position, Blocks.Empty);
 			}
 
-			return Mathf.Max(0, state.Durability);
+			return durability;
 		}
 
 		public bool SetBlock(Vector3i position, Blocks block)
@@ -168,7 +175,11 @@ namespace BooAR.Voxel
 			if (_blocks[position] == block) return false; // skip already-punched
 
 			_blocks[position] = block;
-			_damages[position] = new BlockState(); // initialize damage state
+
+			// initialize damage state
+			_healths[position] = new BlockState();
+			_damageMesh.ResetHealth(position);
+			_damageUpdateQueue.QueueUpdate();
 
 			QueueUpdate();
 			return true;
@@ -187,67 +198,60 @@ namespace BooAR.Voxel
 
 		public void QueueUpdate()
 		{
-			_mustUpdateQuads = true;
+			_blockUpdateQueue.QueueUpdate();
 		}
 
-		void InitiateUpdates()
+		void InitiateUpdaters()
 		{
-			_updateMesh?.Dispose();
-			_updateMesh = new Subject<Unit>().AddTo(_life);
+			_blockUpdateQueue
+				.StartWorker()
+				.Subscribe(_ => UpdateBlockQuads())
+				.AddTo(_life);
 
-			TimeSpan updateFrequency = 0.075f.Seconds();
+			_blockUpdateQueue
+				.StartMain()
+				.Subscribe(_ => UpdateBlockMesh())
+				.AddTo(_life);
 
-			// Check if a QUADS update is queued every once in a while.
-			// If queued, update the quads on a worker thread.
-			Observable.Interval(updateFrequency, Scheduler.ThreadPool)
-			          .Where(_ => _mustUpdateQuads)
-			          .Subscribe(_ => UpdateQuads())
-			          .AddTo(_life);
+			_damageUpdateQueue
+				.StartWorker()
+				.Subscribe(_ => _damageMesh.UpdateQuads())
+				.AddTo(_life);
 
-			// When a MESH update is queued, update the mesh on the main thread.
-			_updateMesh.ObserveOnMainThread()
-			           .ThrottleFrame(1) // up to once every frame
-			           .Subscribe(_ => UpdateMesh())
-			           .AddTo(_life);
+			_damageUpdateQueue
+				.StartMain()
+				.Subscribe(_ => _damageMesh.UpdateMesh())
+				.AddTo(_life);
 		}
 
-		void UpdateQuads() // Executed in a worker thread
+		void UpdateBlockQuads() // Executed in a worker thread
 		{
-			if (!_mustUpdateQuads) return;
-			_mustUpdateQuads = false;
-
-			// cancel the ongoing update
-			_quadUpdates.Cancel();
-
-			lock (_quadUpdates) // wait until the last update is done or cancelled
+			try
 			{
-				try
+				// cancel the ongoing update
+				_blockUpdateCanceller.Cancel();
+
+				CancellationToken token = _blockUpdateCanceller.Token;
+
+				// Clear previous mesh data
+				_meshBuilder.Clear();
+
+				// Update mesh data with current quads
+				foreach ((Quad quad, Blocks block) in _quadBuilder.Build(token))
 				{
-					CancellationToken token = _quadUpdates.Token;
+					_meshBuilder.Add(quad, (int) block);
 
-					// wait until mesh update is done
-					while (_isUpdatingMesh)
-					{
-						token.ThrowIfCancellationRequested();
-					}
-
-					var quads = _quadBuilder.Build(token);
-					_meshBuilder.Update(quads, token);
-
-					// Queue mesh update (for the next frame)
-					_updateMesh.OnNext();
+					token.ThrowIfCancellationRequested();
 				}
-				catch (OperationCanceledException)
-				{
-				}
+			}
+			catch (OperationCanceledException)
+			{
 			}
 		}
 
-		void UpdateMesh()
+		void UpdateBlockMesh()
 		{
-			_isUpdatingMesh = true;
 			_meshBuilder.Apply(_filter.sharedMesh);
-			_isUpdatingMesh = false;
 		}
 	}
 }

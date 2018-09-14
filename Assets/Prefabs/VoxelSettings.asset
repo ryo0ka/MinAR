@@ -32,16 +32,16 @@ MonoBehaviour:
     Octave: 0
     Threshold: 0
     Visibility: 1
-    Durability: 1
+    Durability: 2
   - Key: Coal
     Scale: 3
     Octave: 2
     Threshold: 0.2
     Visibility: 1
-    Durability: 2
+    Durability: 4
   - Key: Iron
     Scale: 2.5
     Octave: 2
     Threshold: 0.25
     Visibility: 1
-    Durability: 3
+    Durability: 8

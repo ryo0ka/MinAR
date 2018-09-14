@@ -37,48 +37,17 @@ namespace BooAR.Voxel
 			throw new ArgumentOutOfRangeException(nameof(normal), normal, null);
 		}
 
-		static void Quad(Directions d, out Vector3 v0, out Vector3 v1, out Vector3 v2, out Vector3 v3)
+		public static Directions Direction(int index, bool forward)
 		{
-			switch (d)
+			switch (index)
 			{
-				case Directions.Forward:
-					v0 = new Vector3(1, 0, 1);
-					v1 = new Vector3(1, 1, 1);
-					v2 = new Vector3(0, 1, 1);
-					v3 = new Vector3(0, 0, 1);
-					break;
-				case Directions.Right:
-					v0 = new Vector3(1, 0, 0);
-					v1 = new Vector3(1, 1, 0);
-					v2 = new Vector3(1, 1, 1);
-					v3 = new Vector3(1, 0, 1);
-					break;
-				case Directions.Left:
-					v0 = new Vector3(0, 0, 1);
-					v1 = new Vector3(0, 1, 1);
-					v2 = new Vector3(0, 1, 0);
-					v3 = new Vector3(0, 0, 0);
-					break;
-				case Directions.Back:
-					v0 = new Vector3(0, 0, 0);
-					v1 = new Vector3(0, 1, 0);
-					v2 = new Vector3(1, 1, 0);
-					v3 = new Vector3(1, 0, 0);
-					break;
-				case Directions.Up:
-					v0 = new Vector3(0, 1, 0);
-					v1 = new Vector3(0, 1, 1);
-					v2 = new Vector3(1, 1, 1);
-					v3 = new Vector3(1, 1, 0);
-					break;
-				case Directions.Down:
-					v0 = new Vector3(0, 0, 0);
-					v1 = new Vector3(1, 0, 0);
-					v2 = new Vector3(1, 0, 1);
-					v3 = new Vector3(0, 0, 1);
-					break;
-				default:
-					throw new ArgumentOutOfRangeException(nameof(d), d, null);
+				case 0 when forward: return Directions.Right;
+				case 0 when !forward: return Directions.Left;
+				case 1 when forward: return Directions.Up;
+				case 1 when !forward: return Directions.Down;
+				case 2 when forward: return Directions.Forward;
+				case 2 when !forward: return Directions.Back;
+				default: throw new ArgumentOutOfRangeException(nameof(index), index, null);
 			}
 		}
 
@@ -162,6 +131,51 @@ namespace BooAR.Voxel
 					d[i] = 1;
 					deltas.Add(d);
 				}
+			}
+		}
+
+		public static void Quad(Directions d, out Vector3 v0, out Vector3 v1, out Vector3 v2, out Vector3 v3)
+		{
+			switch (d)
+			{
+				case Directions.Forward:
+					v0 = new Vector3(1, 0, 1);
+					v1 = new Vector3(1, 1, 1);
+					v2 = new Vector3(0, 1, 1);
+					v3 = new Vector3(0, 0, 1);
+					break;
+				case Directions.Right:
+					v0 = new Vector3(1, 0, 0);
+					v1 = new Vector3(1, 1, 0);
+					v2 = new Vector3(1, 1, 1);
+					v3 = new Vector3(1, 0, 1);
+					break;
+				case Directions.Left:
+					v0 = new Vector3(0, 0, 1);
+					v1 = new Vector3(0, 1, 1);
+					v2 = new Vector3(0, 1, 0);
+					v3 = new Vector3(0, 0, 0);
+					break;
+				case Directions.Back:
+					v0 = new Vector3(0, 0, 0);
+					v1 = new Vector3(0, 1, 0);
+					v2 = new Vector3(1, 1, 0);
+					v3 = new Vector3(1, 0, 0);
+					break;
+				case Directions.Up:
+					v0 = new Vector3(0, 1, 0);
+					v1 = new Vector3(0, 1, 1);
+					v2 = new Vector3(1, 1, 1);
+					v3 = new Vector3(1, 1, 0);
+					break;
+				case Directions.Down:
+					v0 = new Vector3(0, 0, 0);
+					v1 = new Vector3(1, 0, 0);
+					v2 = new Vector3(1, 0, 1);
+					v3 = new Vector3(0, 0, 1);
+					break;
+				default:
+					throw new ArgumentOutOfRangeException(nameof(d), d, null);
 			}
 		}
 	}

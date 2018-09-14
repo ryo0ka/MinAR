@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Threading;
 using UnityEngine;
 using Utils;
 
@@ -12,18 +11,20 @@ namespace BooAR.Voxel
 		readonly List<Vector3> _vertices;
 		readonly List<Vector3> _normals;
 		readonly List<Vector2> _uvs;
-		readonly Dictionary<Blocks, List<int>> _triangles;
+		readonly List<int>[] _triangles;
 		readonly Pool<List<int>> _trianglesPool;
+		readonly int _submeshLength;
 
 		int _lastVertIndex;
 
-		public VoxelMeshBuilder(int initCapacity)
+		public VoxelMeshBuilder(int initCapacity, int submeshLength)
 		{
 			_vertices = new List<Vector3>(QuadVerts * initCapacity);
 			_normals = new List<Vector3>(QuadVerts * initCapacity);
 			_uvs = new List<Vector2>(QuadVerts * initCapacity);
-			_triangles = new Dictionary<Blocks, List<int>>(BlocksUtils.All.Length);
-			_trianglesPool = new Pool<List<int>>(BlocksUtils.All.Length, () => new List<int>(32), e => e.Clear());
+			_triangles = new List<int>[submeshLength];
+			_trianglesPool = new Pool<List<int>>(submeshLength, () => new List<int>(32), e => e.Clear());
+			_submeshLength = submeshLength;
 		}
 
 		public void Apply(Mesh mesh)
@@ -34,27 +35,26 @@ namespace BooAR.Voxel
 				mesh.SetVertices(_vertices);
 				mesh.SetNormals(_normals);
 				mesh.SetUVs(0, _uvs);
-				mesh.subMeshCount = BlocksUtils.All.Length;
+				mesh.subMeshCount = _submeshLength;
 
-				foreach (Blocks block in BlocksUtils.All)
+				for (int i = 0; i < _submeshLength; i++)
 				{
-					if (_triangles.TryGetValue(block, out List<int> submesh))
+					if (_triangles.TryGetValue(i, out List<int> submesh))
 					{
-						mesh.SetTriangles(submesh, (int) block);
+						mesh.SetTriangles(submesh, i);
 					}
 				}
 			}
 		}
 
-		public void Update(IEnumerable<Quad> quads, CancellationToken canceller)
+		public void AddCube(Vector3 position, int submeshId)
 		{
-			Clear();
-
-			foreach (Quad quad in quads)
+			for (int i = 0; i < 6; i++)
 			{
-				canceller.ThrowIfCancellationRequested();
-
-				Add(quad);
+				Directions d = (Directions) i;
+				VoxelUtils.Quad(d, out Vector3 v0, out Vector3 v1, out Vector3 v2, out Vector3 v3);
+				Quad q = new Quad(v0, v1, v2, v3, 1, 1) + position;
+				Add(q, submeshId);
 			}
 		}
 
@@ -65,20 +65,23 @@ namespace BooAR.Voxel
 			_normals.Clear();
 			_uvs.Clear();
 
-			foreach (var p in _triangles)
+			foreach (List<int> p in _triangles)
 			{
-				_trianglesPool.Enpool(p.Value);
+				if (p != null)
+				{
+					_trianglesPool.Enpool(p);
+				}
 			}
 
 			_triangles.Clear();
 		}
 
-		void Add(Quad q)
+		public void Add(Quad quad, int submeshId)
 		{
-			AddVertices(q);
-			AddTriangles(q.Block);
+			AddVertices(quad);
+			AddTriangles(submeshId);
 			AddNormals();
-			//TODO UV
+			AddUVs(quad.Width, quad.Height);
 
 			_lastVertIndex += QuadVerts;
 		}
@@ -91,9 +94,9 @@ namespace BooAR.Voxel
 			_vertices.Add(q.D);
 		}
 
-		void AddTriangles(Blocks block)
+		void AddTriangles(int submeshId)
 		{
-			List<int> tris = GetSubTriangles(block);
+			List<int> tris = GetSubTriangles(submeshId);
 
 			tris.Add(_lastVertIndex + 0);
 			tris.Add(_lastVertIndex + 1);
@@ -103,10 +106,10 @@ namespace BooAR.Voxel
 			tris.Add(_lastVertIndex + 2);
 		}
 
-		List<int> GetSubTriangles(Blocks block)
+		List<int> GetSubTriangles(int submeshId)
 		{
-			if (_triangles.TryGetValue(block, out List<int> tris)) return tris;
-			return _triangles[block] = _trianglesPool.Unpool();
+			if (_triangles.TryGetValue(submeshId, out List<int> tris)) return tris;
+			return _triangles[submeshId] = _trianglesPool.Unpool();
 		}
 
 		void AddNormals()
@@ -124,6 +127,14 @@ namespace BooAR.Voxel
 			_normals.Add(n);
 			_normals.Add(n);
 			_normals.Add(n);
+		}
+
+		void AddUVs(int width, int height)
+		{
+			_uvs.Add(new Vector2(0f * width, 0f * height));
+			_uvs.Add(new Vector2(0f * width, 1f * height));
+			_uvs.Add(new Vector2(1f * width, 1f * height));
+			_uvs.Add(new Vector2(1f * width, 0f * height));
 		}
 	}
 }

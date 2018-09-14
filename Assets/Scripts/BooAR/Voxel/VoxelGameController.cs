@@ -64,7 +64,7 @@ namespace BooAR.Voxel
 			using (UnityUtils.Sample("VoxelWorld.OnPlayerPositionChanged()"))
 			{
 				Vector3i p = _voxels.WorldToVoxel(position);
-				Debug.Log($"{position} -> {p}");
+				//Debug.Log($"{position} -> {p}");
 
 				_voxels.SetBlock(p, Blocks.Empty);
 
@@ -105,14 +105,14 @@ namespace BooAR.Voxel
 		void OnBlockButtonSelected(Blocks block)
 		{
 			_placedBlock = block;
-			
+
 			_haptics.Trigger(HapticFeedbackTypes.Selection);
 		}
 
 		void OnPickaxeButtonSelected()
 		{
 			_placedBlock = null;
-			
+
 			_haptics.Trigger(HapticFeedbackTypes.Selection);
 		}
 
@@ -120,7 +120,7 @@ namespace BooAR.Voxel
 		{
 			if (_placedBlock == null)
 			{
-				DamageBlock(position, block);
+				DamageBlock(position, face, block);
 			}
 			else
 			{
@@ -128,9 +128,9 @@ namespace BooAR.Voxel
 			}
 		}
 
-		void DamageBlock(Vector3i position, Blocks block)
+		void DamageBlock(Vector3i position, Vector3i face, Blocks block)
 		{
-			if (_voxels.DamageBlock(position, 1)) // if block destroyed
+			if (_voxels.DamageBlock(position, face, 1)) // if block destroyed
 			{
 				_inventory.Add(block);
 				_haptics.Trigger(HapticFeedbackTypes.ImpactHeavy);
@@ -145,7 +145,7 @@ namespace BooAR.Voxel
 		{
 			if (_inventory.HasBlock(block))
 			{
-				_voxels.SetBlock(position, block);
+				_voxels.SetBlock(position, block, animate: true);
 				_inventory.Substract(block);
 
 				_haptics.Trigger(HapticFeedbackTypes.ImpactMedium);

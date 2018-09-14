@@ -1,4 +1,12 @@
-﻿Shader "Blocks/Block" 
+﻿// Unity built-in shader source. Copyright (c) 2016 Unity Technologies. MIT license (see license.txt)
+
+// Simplified Additive Particle shader. Differences from regular Additive Particle one:
+// - no Tint color
+// - no Smooth particle support
+// - no AlphaTest
+// - no ColorMask
+
+Shader "Blocks/BlockParticles" 
 {
     Properties 
     {
@@ -9,12 +17,17 @@
     
     SubShader 
     {
-        Tags { "RenderType" = "Opaque" }
+        Tags
+        {
+            "Queue" = "Transparent" 
+            "RenderType"="Transparent" 
+        }
+        
         LOD 150
     
         CGPROGRAM
         #include "Blocks.cginc"
-        #pragma surface surf Lambert noforwardadd
+        #pragma surface surf Lambert noforwardadd alpha:fade
         
         sampler2D _MainTex;
         fixed4 _Color;

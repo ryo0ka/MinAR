@@ -8,28 +8,28 @@ using Zenject;
 
 namespace BooAR.Voxel
 {
-	public class InventoryButton : BaseBehaviour
+	public class BlockInventoryButton : BaseBehaviour
 	{
 		public struct Param
 		{
 			public Blocks Block { get; set; }
 		}
 
-		public class Pool : MonoMemoryPool<Param, InventoryButton>
+		public class Pool : MonoMemoryPool<Param, BlockInventoryButton>
 		{
-			protected override void OnCreated(InventoryButton item)
+			protected override void OnCreated(BlockInventoryButton item)
 			{
 				base.OnCreated(item);
 				item.OnCreated();
 			}
 
-			protected override void Reinitialize(Param param, InventoryButton item)
+			protected override void Reinitialize(Param param, BlockInventoryButton item)
 			{
 				base.Reinitialize(param, item);
 				item.OnSpawned(param);
 			}
 
-			protected override void OnDespawned(InventoryButton item)
+			protected override void OnDespawned(BlockInventoryButton item)
 			{
 				base.OnDespawned(item);
 				item.OnDespawned();
@@ -38,6 +38,7 @@ namespace BooAR.Voxel
 
 		readonly CompositeDisposable _life = new CompositeDisposable();
 
+#pragma warning disable 649
 		[SerializeField, ReadOnly]
 		Blocks _block;
 
@@ -51,7 +52,8 @@ namespace BooAR.Voxel
 		Text _countText;
 
 		[Inject]
-		VoxelMeshSource _source;
+		VoxelSource _source;
+#pragma warning restore 649
 
 		public IObservable<Unit> OnClickAsObservable() => _button.OnClickAsObservable();
 
@@ -64,12 +66,13 @@ namespace BooAR.Voxel
 		void OnCreated()
 		{
 			_life.AddTo(this);
+			_graphic.material = Instantiate(_graphic.material);
 		}
 
 		void OnSpawned(Param param)
 		{
 			_block = param.Block;
-			_graphic.color = _source.BlockMaterials[(int) _block].GetColor("_Color");
+			_graphic.material.SetFloat(VoxelConsts.BlockIndexKey, (int) _block);
 			name = $"InventoryButton({_block})";
 			SetCount(0);
 		}

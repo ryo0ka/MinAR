@@ -14,7 +14,7 @@ namespace BooAR.Voxel
 			None
 		}
 
-		readonly List<Quad> _quads;
+		readonly List<(Quad, Blocks)> _quads;
 		readonly int _length;
 		readonly Faces[] _faces;
 		readonly Blocks[] _blocks;
@@ -23,14 +23,14 @@ namespace BooAR.Voxel
 
 		public VoxelQuadBuilder(int initCapacity, int length, Func<Vector3i, Lookup?> lookup)
 		{
-			_quads = new List<Quad>(initCapacity);
+			_quads = new List<(Quad, Blocks)>(initCapacity);
 			_length = length;
 			_faces = new Faces[_length * _length];
 			_blocks = new Blocks[_length * _length];
 			_lookup = lookup;
 		}
 
-		public IEnumerable<Quad> Build(CancellationToken canceller)
+		public IEnumerable<(Quad, Blocks)> Build(CancellationToken canceller)
 		{
 			_quads.Clear();
 			_canceller = canceller;
@@ -176,8 +176,6 @@ namespace BooAR.Voxel
 			{
 				_canceller.ThrowIfCancellationRequested();
 
-				//Debug.Log($"{ad}, ({cd}, {cu}, {cv}) -- {mask[n]}");
-
 				Faces face = _faces[faceIndex];
 				if (face != Faces.None)
 				{
@@ -186,33 +184,48 @@ namespace BooAR.Voxel
 					int uLen = Width(uPos, faceIndex, face, block);
 					int vLen = Height(vPos, uLen, faceIndex, face, block);
 
+					// Extension to the width direction
 					Vector3i uDelta = new Vector3i();
 					uDelta[uAxis] = uLen;
 
+					// Extension to the height direction
 					Vector3i vDelta = new Vector3i();
 					vDelta[vAxis] = vLen;
 
+					// Base position
 					Vector3i aCoord = new Vector3i();
 					aCoord[dAxis] = dPos;
 					aCoord[uAxis] = uPos;
 					aCoord[vAxis] = vPos;
 
+					// 3 other positions
 					Vector3i bCoord = aCoord + uDelta;
 					Vector3i cCoord = bCoord + vDelta;
 					Vector3i dCoord = aCoord + vDelta;
 
-					Quad quad = (face == Faces.Back)
-						? new Quad(aCoord, bCoord, cCoord, dCoord, block)
-						: new Quad(dCoord, cCoord, bCoord, aCoord, block); // reverse order
+					// Fix UV orientation (so that textures won't flip around)
+					if (dAxis != 0)
+					{
+						Vector3i aCoord_ = aCoord;
+						aCoord = bCoord;
+						bCoord = cCoord;
+						cCoord = dCoord;
+						dCoord = aCoord_;
+					}
 
-					_quads.Add(quad);
+					int width = (dAxis != 0) ? uLen : vLen;
+					int height = (dAxis != 0) ? vLen : uLen;
+
+					Quad quad = (face == Faces.Back)
+						? new Quad(aCoord, bCoord, cCoord, dCoord, width, height)
+						: new Quad(dCoord, cCoord, bCoord, aCoord, width, height); // reverse order
+
+					_quads.Add((quad, block));
 
 					// Initialize faces of this quad for the next run
 					for (int u = 0; u < uLen; u++)
 					for (int v = 0; v < vLen; v++)
 					{
-						_canceller.ThrowIfCancellationRequested();
-
 						_faces[faceIndex + u + v * _length] = Faces.None;
 					}
 
