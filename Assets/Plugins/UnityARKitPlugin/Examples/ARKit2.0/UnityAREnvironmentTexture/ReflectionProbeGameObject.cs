@@ -50,6 +50,10 @@ public class ReflectionProbeGameObject : MonoBehaviour {
 		//always make sure to update texture in next update
 		if (latchUpdate && reflectionProbe != null) 
 		{
+			if (reflectionProbe.customBakedTexture != null)
+			{
+				Object.Destroy(reflectionProbe.customBakedTexture);
+			}
 			reflectionProbe.customBakedTexture = latchedTexture;
 			latchUpdate = false;
 		}

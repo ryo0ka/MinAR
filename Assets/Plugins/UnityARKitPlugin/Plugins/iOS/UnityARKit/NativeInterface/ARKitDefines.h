@@ -145,6 +145,7 @@ typedef struct
     UnityARMatrix4x4 leftEyeTransform;
     UnityARMatrix4x4 rightEyeTransform;
     UnityARVector3 lookAtPoint;
+    uint32_t isTracked;
 } UnityARFaceAnchorData;
 
 typedef struct

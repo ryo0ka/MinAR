@@ -343,7 +343,7 @@ GameObject:
   - component: {fileID: 495387809}
   - component: {fileID: 495387808}
   m_Layer: 0
-  m_Name: GenerateObjectAnchorWipesBottle
+  m_Name: GenerateObjectAnchorCokeCan
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

@@ -14,10 +14,14 @@ public class HitCreateEnvironmentProbe : MonoBehaviour
 	{
 		//note we have not converted to Unity coord system yet, so we can pass it in directly
 		UnityAREnvironmentProbeAnchorData anchorData;
-		anchorData.cubemapPtr = IntPtr.Zero;
 		anchorData.ptrIdentifier = IntPtr.Zero;
 		anchorData.probeExtent = Vector3.one;
 		anchorData.transform = UnityARMatrixOps.GetMatrix (worldTransform); //this should be in ARKit coords
+        anchorData.cubemapData.cubemapPtr = IntPtr.Zero;
+        anchorData.cubemapData.textureFormat = UnityAREnvironmentTextureFormat.UnityAREnvironmentTextureFormatDefault;
+        anchorData.cubemapData.width = 0;
+        anchorData.cubemapData.height = 0;
+        anchorData.cubemapData.mipmapCount = 0;
 		anchorData = UnityARSessionNativeInterface.GetARSessionNativeInterface ().AddEnvironmentProbeAnchor (anchorData);
 	}
 
@@ -59,7 +63,7 @@ public class HitCreateEnvironmentProbe : MonoBehaviour
 		if (Input.touchCount > 0)
 		{
 			var touch = Input.GetTouch(0);
-			if (touch.phase == TouchPhase.Began || touch.phase == TouchPhase.Moved)
+			if (touch.phase == TouchPhase.Began)
 			{
 				var screenPosition = Camera.main.ScreenToViewportPoint(touch.position);
 				ARPoint point = new ARPoint {

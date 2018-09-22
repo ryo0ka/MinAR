@@ -9,7 +9,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ea5fe5050450e46b696fbcff74cf3370, type: 3}
-  m_Name: WipesBottleObject
+  m_Name: CokeCanObject
   m_EditorClassIdentifier: 
-  objectName: wipesbottle
-  referenceObject: {fileID: 102900000, guid: 38db19edb85cf4118bd5b809622fb0dd, type: 3}
+  objectName: cokeCan
+  referenceObject: {fileID: 102900000, guid: 03163c77b90434530bcfcb50f6da39f5, type: 3}
