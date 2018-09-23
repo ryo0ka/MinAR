@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
+using BooAR.Games;
 using UnityEngine;
 using Utils;
 
@@ -79,35 +80,35 @@ namespace BooAR.Voxel
 			return ps;
 		}
 
-		public Blocks GenerateBlock(Vector3i position)
+		public byte GenerateBlock(Vector3i position)
 		{
 			using (UnityUtils.Sample("TerrainGenerator.Ask()"))
 			{
-				return AskBlock(position, Blocks.Iron)
-				       ?? AskBlock(position, Blocks.Coal)
-				       ?? Blocks.Stone;
+				return AskBlock(position, (byte) Blocks.Iron)
+				       ?? AskBlock(position, (byte) Blocks.Coal)
+				       ?? (byte) Blocks.Stone;
 			}
 		}
 
-		Blocks? AskBlock(Vector3i position, Blocks block)
+		byte? AskBlock(Vector3i position, byte block)
 		{
-			Param p = _params[(int) block];
+			Param p = _params[block];
 			float x = MathUtils.Map(position.x, -p.Scale, p.Scale, -1f, 1f);
 			float y = MathUtils.Map(position.y, -p.Scale, p.Scale, -1f, 1f);
 			float z = MathUtils.Map(position.z, -p.Scale, p.Scale, -1f, 1f);
-			float n = _perlins[(int) block].Fbm(new Vector3(x, y, z), p.Octave);
+			float n = _perlins[block].Fbm(new Vector3(x, y, z), p.Octave);
 
-			return (n > p.Threshold) ? block : (Blocks?) null;
+			return (n > p.Threshold) ? block : (byte?) null;
 		}
 
-		public Visibilities GetVisibility(Blocks block)
+		public Visibilities GetVisibility(byte block)
 		{
-			return _params[(int) block].Visibility;
+			return _params[block].Visibility;
 		}
 
-		public int GetDurability(Blocks block)
+		public int GetDurability(byte block)
 		{
-			return _params[(int) block].Durability;
+			return _params[block].Durability;
 		}
 	}
 }

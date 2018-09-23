@@ -3,33 +3,33 @@ using ICSharpCode.SharpZipLib.GZip;
 
 namespace BooAR.Voxel
 {
-	public class BlocksSerializer
+	public class ChunkSerializer
 	{
 		readonly int _length;
 
-		public BlocksSerializer(int length)
+		public ChunkSerializer(int length)
 		{
 			_length = length;
 		}
 
-		public void Serialize(Array3<Blocks> blocks, Stream target)
+		public void Serialize(Array3<byte> blocks, Stream target)
 		{
 			using (GZipOutputStream s = new GZipOutputStream(target))
 			{
 				for (int i = 0; i < _length * _length * _length; i++)
 				{
-					s.WriteByte((byte) blocks[i]);
+					s.WriteByte(blocks[i]);
 				}
 			}
 		}
 
-		public void Deserialize(Array3<Blocks> blocks, Stream source)
+		public void Deserialize(Array3<byte> blocks, Stream source)
 		{
 			using (GZipInputStream s = new GZipInputStream(source))
 			{
 				for (int i = 0; i < _length * _length * _length; i++)
 				{
-					blocks[i] = (Blocks) s.ReadByte();
+					blocks[i] = (byte) s.ReadByte();
 				}
 			}
 		}

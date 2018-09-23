@@ -6,6 +6,10 @@ using UniRx;
 
 namespace BooAR.Haptics
 {
+	/* Triggers given haptic feedback when the Selectable is selected
+	 *
+	 * 
+	 */
 	[RequireComponent(typeof(Selectable))]
 	public class HapticSelectable : MonoBehaviour
 	{

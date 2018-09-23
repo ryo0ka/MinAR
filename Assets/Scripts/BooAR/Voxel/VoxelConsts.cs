@@ -8,5 +8,8 @@
 
 		public const string BlockIndexKey = "_BlockIndex";
 		public const string DamageIndexKey = "_DamageIndex";
+
+		public static readonly int BlockCount = Games.BlocksUtils.All.Length;
+		public const byte EmptyBlock = (byte) Games.Blocks.Empty;
 	}
 }

@@ -1,43 +1,30 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using Utils;
 using Zenject;
 
 namespace BooAR.Voxel
 {
-	[Serializable]
-	public class VoxelWorld : BaseBehaviour, IGlobalBlockLookup
+	public class VoxelWorld : BaseBehaviour, IGlobalBlockLookup, IVoxelPersistence
 	{
 #pragma warning disable 649
-		[SerializeField]
-		ChunksSerializer _serializer;
-
-		[SerializeField]
-		Vector3i _initialExtent;
-
 		[Inject]
 		ITerrainGenerator _terrain;
-
-		[Inject]
-		IBlockAttributeTable _table;
 
 		[Inject]
 		Chunk.Pool _chunkPool;
 
 		[Inject]
-		BlockParticleSystemController _blockParticles;
+		IBlockParticlePresenter _blockParticles;
 #pragma warning restore 649
 
-		Dictionary<Vector3i, Chunk> _chunks;
-		ISet<Vector3i> _neighbors;
+		readonly VoxelWorldSerializer _serializer = new VoxelWorldSerializer();
+		readonly Dictionary<Vector3i, Chunk> _chunks = new Dictionary<Vector3i, Chunk>();
+		readonly ISet<Vector3i> _neighbors = new HashSet<Vector3i>();
 		Vector3 _rootPos;
 
 		void Awake()
 		{
-			_chunks = new Dictionary<Vector3i, Chunk>();
-			_neighbors = new HashSet<Vector3i>();
-
 			const float pos = (VoxelConsts.ChunkLength * VoxelConsts.BlockSize) / 2;
 			_rootPos = new Vector3(pos, pos, pos);
 
@@ -45,34 +32,20 @@ namespace BooAR.Voxel
 			transform.localScale = new Vector3(VoxelConsts.BlockSize, VoxelConsts.BlockSize, VoxelConsts.BlockSize);
 		}
 
-		public void PopulateInitialBlocks()
+		public void Save(string dirPath)
 		{
-			ClearBlocks();
-
-			GetOrAddChunk((0, 0, 0));
-
-			for (int x = -_initialExtent.x + 1; x < _initialExtent.x; x++)
-			for (int y = -_initialExtent.y + 1; y < _initialExtent.y; y++)
-			for (int z = -_initialExtent.z + 1; z < _initialExtent.z; z++)
-			{
-				GetOrAddChunk((x, y, z));
-			}
+			_serializer.Serialize(dirPath, _chunks);
 		}
 
-		void ClearBlocks()
+		public void Load(string dirPath)
+		{
+			_serializer.Deserialize(dirPath, _chunks, GetOrAddChunk);
+		}
+
+		public void Clear()
 		{
 			_chunks.Values.ForEach(_chunkPool.Despawn);
 			_chunks.Clear();
-		}
-
-		public void Save(string id)
-		{
-			_serializer.Serialize(id, _chunks);
-		}
-
-		public void Load(string id)
-		{
-			_serializer.Deserialize(id, _chunks, c => GetOrAddChunk(c));
 		}
 
 		public Vector3 WorldToVoxel(Vector3 worldPosition)
@@ -85,18 +58,7 @@ namespace BooAR.Voxel
 			return WorldToVoxel(worldPosition * 1f).RoundToInt3();
 		}
 
-		public Blocks? GetBlock(Vector3i position)
-		{
-			(Vector3i chunkPosition, Vector3i blockPosition) = GlobalToLocal(position);
-			if (_chunks.TryGetValue(chunkPosition, out Chunk chunk))
-			{
-				return chunk.GetBlock(blockPosition);
-			}
-
-			return null;
-		}
-
-		public Blocks GetBlockOrInit(Vector3i position)
+		public byte GetBlock(Vector3i position)
 		{
 			(Vector3i chunkPosition, Vector3i blockPosition) = GlobalToLocal(position);
 			Chunk chunk = GetOrAddChunk(chunkPosition);
@@ -109,7 +71,7 @@ namespace BooAR.Voxel
 			{
 				(Vector3i chunkPosition, Vector3i blockPosition) = GlobalToLocal(position);
 				Chunk chunk = GetOrAddChunk(chunkPosition);
-				Blocks block = chunk.GetBlock(blockPosition);
+				byte block = chunk.GetBlock(blockPosition);
 
 				// Do damage the block here
 				float health = chunk.DamageBlock(blockPosition, damage);
@@ -127,7 +89,7 @@ namespace BooAR.Voxel
 			}
 		}
 
-		public void SetBlock(Vector3i position, Blocks block, bool animate=false)
+		public void SetBlock(Vector3i position, byte block, bool animate = false)
 		{
 			using (UnityUtils.Sample("VoxelWorld.SetBlock()"))
 			{
@@ -138,7 +100,7 @@ namespace BooAR.Voxel
 				{
 					UpdateNeighborChunk(chunkPosition, blockPosition);
 
-					if (block != Blocks.Empty && animate)
+					if (block != VoxelConsts.EmptyBlock && animate)
 					{
 						_blockParticles.EmitPlacement(position);
 					}
@@ -201,7 +163,7 @@ namespace BooAR.Voxel
 			}
 		}
 
-		public Lookup? Lookup(Vector3i globalBlockPosition)
+		public BlockLookup? Lookup(Vector3i globalBlockPosition)
 		{
 			(Vector3i chunkPosition, Vector3i blockPosition) = GlobalToLocal(globalBlockPosition);
 

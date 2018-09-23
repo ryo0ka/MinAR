@@ -1,35 +1,36 @@
 ﻿using System;
+using BooAR.Voxel;
+using Sirenix.OdinInspector;
+using UniRx;
 using UnityEngine;
 using UnityEngine.UI;
 using Utils;
-using Sirenix.OdinInspector;
-using UniRx;
 using Zenject;
 
-namespace BooAR.Voxel
+namespace BooAR.Games
 {
-	public class BlockInventoryButton : BaseBehaviour
+	public class InventoryButton : BaseBehaviour
 	{
 		public struct Param
 		{
 			public Blocks Block { get; set; }
 		}
 
-		public class Pool : MonoMemoryPool<Param, BlockInventoryButton>
+		public class Pool : MonoMemoryPool<Param, InventoryButton>
 		{
-			protected override void OnCreated(BlockInventoryButton item)
+			protected override void OnCreated(InventoryButton item)
 			{
 				base.OnCreated(item);
 				item.OnCreated();
 			}
 
-			protected override void Reinitialize(Param param, BlockInventoryButton item)
+			protected override void Reinitialize(Param param, InventoryButton item)
 			{
 				base.Reinitialize(param, item);
 				item.OnSpawned(param);
 			}
 
-			protected override void OnDespawned(BlockInventoryButton item)
+			protected override void OnDespawned(InventoryButton item)
 			{
 				base.OnDespawned(item);
 				item.OnDespawned();
@@ -50,9 +51,6 @@ namespace BooAR.Voxel
 
 		[SerializeField]
 		Text _countText;
-
-		[Inject]
-		VoxelSource _source;
 #pragma warning restore 649
 
 		public IObservable<Unit> OnClickAsObservable() => _button.OnClickAsObservable();

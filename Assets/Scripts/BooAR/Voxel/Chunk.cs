@@ -68,19 +68,19 @@ namespace BooAR.Voxel
 		readonly UpdateQueue _damageUpdateQueue = new UpdateQueue(.075f.Seconds());
 
 		Vector3i _chunkPosition;
-		Array3<Blocks> _blocks;
+		Array3<byte> _blocks;
 		Array3<BlockState> _healths;
 		VoxelQuadBuilder _quadBuilder;
 		VoxelMeshBuilder _meshBuilder;
-		BlocksSerializer _serializer;
+		ChunkSerializer _serializer;
 
 		void OnCreated()
 		{
 			_life.AddTo(this);
-			_blocks = new Array3<Blocks>(VoxelConsts.ChunkLength);
+			_blocks = new Array3<byte>(VoxelConsts.ChunkLength);
 			_healths = new Array3<BlockState>(VoxelConsts.ChunkLength);
-			_serializer = new BlocksSerializer(VoxelConsts.ChunkLength);
-			_meshBuilder = new VoxelMeshBuilder(1024, BlocksUtils.All.Length);
+			_serializer = new ChunkSerializer(VoxelConsts.ChunkLength);
+			_meshBuilder = new VoxelMeshBuilder(1024, VoxelConsts.BlockCount);
 			_renderer.sharedMaterials = _source.BlockMaterials;
 			_quadBuilder = new VoxelQuadBuilder(1024, VoxelConsts.ChunkLength, blockPosition =>
 			{
@@ -116,21 +116,21 @@ namespace BooAR.Voxel
 			name = $"Chunk(null)";
 		}
 
-		public Lookup LookUp(Vector3i position)
+		public BlockLookup LookUp(Vector3i position)
 		{
-			Blocks block = GetBlock(position);
+			byte block = GetBlock(position);
 			Visibilities visibility = _table.GetVisibility(block);
-			return new Lookup(block, visibility);
+			return new BlockLookup(block, visibility);
 		}
 
-		public Blocks GetBlock(Vector3i position)
+		public byte GetBlock(Vector3i position)
 		{
 			return _blocks[position];
 		}
 
 		float GetDurability(Vector3i position)
 		{
-			Blocks block = _blocks[position];
+			byte block = _blocks[position];
 			int initDurability = _table.GetDurability(block);
 			int durability = _healths[position].Durability;
 			return (float) durability / initDurability;
@@ -139,10 +139,10 @@ namespace BooAR.Voxel
 		// Returns durability (remainig health in 0~1f) of the block
 		public float DamageBlock(Vector3i position, int damage)
 		{
-			Blocks block = _blocks[position];
+			byte block = _blocks[position];
 
 			// Can't break the thin air
-			Debug.Assert(block != Blocks.Empty);
+			Debug.Assert(block != VoxelConsts.EmptyBlock);
 
 			BlockState state = _healths[position];
 			int maxHealth = _table.GetDurability(block);
@@ -163,13 +163,13 @@ namespace BooAR.Voxel
 			if (durability <= 0)
 			{
 				// Break block if durability exceeded
-				SetBlock(position, Blocks.Empty);
+				SetBlock(position, VoxelConsts.EmptyBlock);
 			}
 
 			return durability;
 		}
 
-		public bool SetBlock(Vector3i position, Blocks block)
+		public bool SetBlock(Vector3i position, byte block)
 		{
 			if (!_blocks.ContainsIndex(position)) return false; // skip out bounds
 			if (_blocks[position] == block) return false; // skip already-punched
@@ -237,9 +237,9 @@ namespace BooAR.Voxel
 				_meshBuilder.Clear();
 
 				// Update mesh data with current quads
-				foreach ((Quad quad, Blocks block) in _quadBuilder.Build(token))
+				foreach ((Quad quad, byte block) in _quadBuilder.Build(token))
 				{
-					_meshBuilder.Add(quad, (int) block);
+					_meshBuilder.Add(quad, block);
 
 					token.ThrowIfCancellationRequested();
 				}

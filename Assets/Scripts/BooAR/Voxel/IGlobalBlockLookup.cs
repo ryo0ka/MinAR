@@ -2,6 +2,6 @@
 {
 	public interface IGlobalBlockLookup
 	{
-		Lookup? Lookup(Vector3i blockPosition);
+		BlockLookup? Lookup(Vector3i blockPosition);
 	}
 }

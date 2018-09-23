@@ -14,23 +14,23 @@ namespace BooAR.Voxel
 			None
 		}
 
-		readonly List<(Quad, Blocks)> _quads;
+		readonly List<(Quad, byte)> _quads;
 		readonly int _length;
 		readonly Faces[] _faces;
-		readonly Blocks[] _blocks;
-		readonly Func<Vector3i, Lookup?> _lookup;
+		readonly byte[] _blocks;
+		readonly Func<Vector3i, BlockLookup?> _lookup;
 		CancellationToken _canceller;
 
-		public VoxelQuadBuilder(int initCapacity, int length, Func<Vector3i, Lookup?> lookup)
+		public VoxelQuadBuilder(int initCapacity, int length, Func<Vector3i, BlockLookup?> lookup)
 		{
-			_quads = new List<(Quad, Blocks)>(initCapacity);
+			_quads = new List<(Quad, byte)>(initCapacity);
 			_length = length;
 			_faces = new Faces[_length * _length];
-			_blocks = new Blocks[_length * _length];
+			_blocks = new byte[_length * _length];
 			_lookup = lookup;
 		}
 
-		public IEnumerable<(Quad, Blocks)> Build(CancellationToken canceller)
+		public IEnumerable<(Quad, byte)> Build(CancellationToken canceller)
 		{
 			_quads.Clear();
 			_canceller = canceller;
@@ -91,7 +91,7 @@ namespace BooAR.Voxel
 					_lookup(lastVoxPos),
 					_lookup(thisVoxPos),
 					out Faces face,
-					out Blocks block);
+					out byte block);
 
 				_faces[faceIndex] = face;
 				_blocks[faceIndex] = block;
@@ -104,15 +104,15 @@ namespace BooAR.Voxel
 
 		void CalculateFace(
 			Faces outbound,
-			Lookup? lastVoxSrc,
-			Lookup? thisVoxSrc,
+			BlockLookup? lastVoxSrc,
+			BlockLookup? thisVoxSrc,
 			out Faces face,
-			out Blocks block)
+			out byte block)
 		{
 			if (lastVoxSrc.HasValue && thisVoxSrc.HasValue)
 			{
-				Lookup lastVox = lastVoxSrc.Value;
-				Lookup thisVox = thisVoxSrc.Value;
+				BlockLookup lastVox = lastVoxSrc.Value;
+				BlockLookup thisVox = thisVoxSrc.Value;
 
 				if (lastVox.IsOpaque && thisVox.IsOpaque)
 				{
@@ -179,7 +179,7 @@ namespace BooAR.Voxel
 				Faces face = _faces[faceIndex];
 				if (face != Faces.None)
 				{
-					Blocks block = _blocks[faceIndex];
+					byte block = _blocks[faceIndex];
 
 					int uLen = Width(uPos, faceIndex, face, block);
 					int vLen = Height(vPos, uLen, faceIndex, face, block);
@@ -242,7 +242,7 @@ namespace BooAR.Voxel
 			}
 		}
 
-		int Width(int initPosition, int faceIndex, Faces face, Blocks block)
+		int Width(int initPosition, int faceIndex, Faces face, byte block)
 		{
 			// Compute mesh length in U axis from the initial point
 			// expanding to the first wrong face or the end of volume
@@ -260,7 +260,7 @@ namespace BooAR.Voxel
 			return uLen;
 		}
 
-		int Height(int initPosition, int width, int faceIndex, Faces face, Blocks block)
+		int Height(int initPosition, int width, int faceIndex, Faces face, byte block)
 		{
 			// Compute mesh length in V axis from the initial point
 			// expanding to the first wrong face or the end of volume

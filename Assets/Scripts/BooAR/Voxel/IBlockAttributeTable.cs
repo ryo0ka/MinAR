@@ -2,7 +2,7 @@
 {
 	public interface IBlockAttributeTable
 	{
-		Visibilities GetVisibility(Blocks block);
-		int GetDurability(Blocks block);
+		Visibilities GetVisibility(byte block);
+		int GetDurability(byte block);
 	}
 }

@@ -3,16 +3,16 @@ using Zenject;
 
 namespace BooAR.Voxel
 {
-	public class BlockParticleSystemController
+	public class BlockParticlePresenter : IBlockParticlePresenter
 	{
 		[Inject]
 		BlockParticleSystem.Pool _pool;
 
-		public void EmitDamage(Vector3i position, Vector3i face, Blocks block, float durability)
+		public void EmitDamage(Vector3i position, Vector3i face, byte block, float durability)
 		{
 			BlockParticleSystem particles = _pool.Spawn(new BlockParticleSystem.Params
 			{
-				Index = (int) block,
+				Index = block,
 			});
 
 			// Set position of the particle system, ASSUMING it's parented to the voxel world.

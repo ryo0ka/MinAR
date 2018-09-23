@@ -2,19 +2,6 @@
 
 namespace BooAR.Voxel
 {
-	public enum Blocks : byte
-	{
-		Empty,
-		Stone,
-		Coal,
-		Iron,
-	}
-
-	public static class BlocksUtils
-	{
-		public static readonly Blocks[] All = (Blocks[]) Enum.GetValues(typeof(Blocks));
-	}
-
 	public enum Visibilities
 	{
 		Clear,
@@ -22,13 +9,13 @@ namespace BooAR.Voxel
 		Transparent,
 	}
 	
-	public struct Lookup
+	public struct BlockLookup
 	{
-		public Blocks Block { get; }
+		public byte Block { get; }
 		public Visibilities Visibility { get; }
 		public bool IsOpaque => Visibility == Visibilities.Opaque;
 
-		public Lookup(Blocks block, Visibilities visibility)
+		public BlockLookup(byte block, Visibilities visibility)
 		{
 			Block = block;
 			Visibility = visibility;

@@ -2,6 +2,6 @@
 {
 	public interface ITerrainGenerator
 	{
-		Blocks GenerateBlock(Vector3i position);
+		byte GenerateBlock(Vector3i position);
 	}
 }
