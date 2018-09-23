@@ -15,7 +15,10 @@ namespace BooAR.Voxel
 		Chunk.Pool _chunkPool;
 
 		[Inject]
-		IBlockParticlePresenter _blockParticles;
+		IBlockAttributeTable _table;
+
+		[SerializeField]
+		BlockActionHandler _actions;
 #pragma warning restore 649
 
 		readonly VoxelWorldSerializer _serializer = new VoxelWorldSerializer();
@@ -39,6 +42,7 @@ namespace BooAR.Voxel
 
 		public void Load(string dirPath)
 		{
+			Clear();
 			_serializer.Deserialize(dirPath, _chunks, GetOrAddChunk);
 		}
 
@@ -46,6 +50,7 @@ namespace BooAR.Voxel
 		{
 			_chunks.Values.ForEach(_chunkPool.Despawn);
 			_chunks.Clear();
+			_actions.Initialize();
 		}
 
 		public Vector3 WorldToVoxel(Vector3 worldPosition)
@@ -72,15 +77,11 @@ namespace BooAR.Voxel
 				(Vector3i chunkPosition, Vector3i blockPosition) = GlobalToLocal(position);
 				Chunk chunk = GetOrAddChunk(chunkPosition);
 				byte block = chunk.GetBlock(blockPosition);
+				float maxHealth = _table.GetDurability(block);
 
-				// Do damage the block here
-				float health = chunk.DamageBlock(blockPosition, damage);
-
-				// Show damage particles
-				_blockParticles.EmitDamage(position, face, block, health);
-
-				if (health <= 0f)
+				if (_actions.Damage(position, face, block, damage / maxHealth))
 				{
+					chunk.SetBlock(blockPosition, VoxelConsts.EmptyBlock);
 					UpdateNeighborChunk(chunkPosition, blockPosition);
 					return true;
 				}
@@ -102,7 +103,7 @@ namespace BooAR.Voxel
 
 					if (block != VoxelConsts.EmptyBlock && animate)
 					{
-						_blockParticles.EmitPlacement(position);
+						_actions.Place(position);
 					}
 				}
 			}

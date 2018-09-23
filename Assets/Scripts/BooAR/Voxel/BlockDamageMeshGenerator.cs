@@ -1,12 +1,11 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.Rendering;
 using Utils;
 using Zenject;
 
 namespace BooAR.Voxel
 {
-	public class BlockDamageMeshGenerator : BaseBehaviour
+	public class BlockDamageMeshGenerator : BaseBehaviour, IBlockDamagePresenter
 	{
 #pragma warning disable 649
 		[SerializeField]
@@ -20,13 +19,10 @@ namespace BooAR.Voxel
 #pragma warning restore 
 
 		Mesh _mesh;
-		Dictionary<Vector3i, float> _healths;
 		VoxelMeshBuilder _meshBuilder;
-		bool _updatedQuads;
 
-		void Awake()
+		void Start()
 		{
-			_healths = new Dictionary<Vector3i, float>();
 			_meshBuilder = new VoxelMeshBuilder(128, VoxelConsts.DamageLength);
 
 			// Initialize mesh
@@ -45,46 +41,24 @@ namespace BooAR.Voxel
 			_renderer.sharedMaterials = materials;
 		}
 
+		public void ResetDamage()
+		{
+			_meshBuilder.Clear();
+			_mesh.Clear();
+		}
+
 		public void UpdateHealth(Vector3i position, float health)
 		{
-			_healths[position] = health;
-			_updatedQuads = true;
-		}
-
-		public void ResetHealth(Vector3i position)
-		{
-			_healths.Remove(position);
-			_updatedQuads = true;
-		}
-
-		public void ResetHealthAll()
-		{
-			_healths.Clear();
-			_updatedQuads = true;
-		}
-
-		public void UpdateQuads()
-		{
-			// Don't update if updated already
-			if (!_updatedQuads) return;
-			_updatedQuads = false;
-			
 			_meshBuilder.Clear();
+			_mesh.Clear();
 
-			foreach (var p in _healths)
-			{
-				Vector3i position = p.Key;
-				float health = p.Value;
-
-				int submeshId = Mathf.FloorToInt(health * VoxelConsts.DamageLength);
-				_meshBuilder.AddCube(position, submeshId);
-			}
+			_meshBuilder.AddCube(position, GetSubmeshID(health));
+			_meshBuilder.Apply(_mesh);
 		}
 
-		public void UpdateMesh()
+		int GetSubmeshID(float health)
 		{
-			_mesh.Clear();
-			_meshBuilder.Apply(_mesh);
+			return Mathf.FloorToInt(health * VoxelConsts.DamageLength);
 		}
 	}
 }

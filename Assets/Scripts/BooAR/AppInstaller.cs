@@ -26,6 +26,9 @@ namespace BooAR
 		[SerializeField]
 		BlockParticleSystem _particlesPrefab;
 
+		[SerializeField]
+		BlockDamageMeshGenerator _blockDamageMeshGenerator;
+
 		[Header("ARs:")]
 
 		[SerializeField]
@@ -74,6 +77,8 @@ namespace BooAR
 			Container.BindMemoryPool<Chunk, Chunk.Pool>()
 			         .FromComponentInNewPrefab(_chunkPrefab)
 			         .UnderTransform(_voxels.transform);
+
+			Container.BindInstance<IBlockDamagePresenter>(_blockDamageMeshGenerator);
 
 			Container.BindInstance<IGlobalBlockLookup>(_voxels);
 
