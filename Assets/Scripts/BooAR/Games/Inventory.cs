@@ -36,6 +36,8 @@ namespace BooAR.Games
 		{
 			_inventory[(int) block] += 1;
 			_onCountChanged.OnNext(block);
+			
+			//Debug.Log($"Inventory.Add({block})");
 		}
 
 		public void Substract(Blocks block)
@@ -44,6 +46,8 @@ namespace BooAR.Games
 
 			_inventory[(int) block] -= 1;
 			_onCountChanged.OnNext(block);
+			
+			Debug.Log($"Inventory.Substract({block})");
 		}
 
 		public void Save(string dirPath)

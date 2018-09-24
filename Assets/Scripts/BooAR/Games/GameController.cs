@@ -111,7 +111,7 @@ namespace BooAR.Games
 
 		void OnPauseStateChanged(PauseHandler.State meta, PauseHandler.State stuck)
 		{
-			Debug.Log($"OnPauseStateChanged({meta}, {stuck})");
+			//Debug.Log($"OnPauseStateChanged({meta}, {stuck})");
 		}
 
 		Vector3i GetPlayerVoxelPosition()

@@ -93,7 +93,7 @@ namespace BooAR.Apps
 
 		void SetMenuVisible(bool visible)
 		{
-			Debug.Log($"SetMenuVisible({visible})");
+			//Debug.Log($"SetMenuVisible({visible})");
 			_menuRoot.SetActive(visible);
 			_app.SetPause(visible);
 		}

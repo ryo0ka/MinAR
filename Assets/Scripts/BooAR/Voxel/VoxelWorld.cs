@@ -128,11 +128,8 @@ namespace BooAR.Voxel
 
 		Chunk GetOrAddChunk(Vector3i position)
 		{
-			using (UnityUtils.Sample("VoxelWorld.GetOrAddChunk()"))
-			{
-				if (_chunks.TryGetValue(position, out Chunk chunk)) return chunk;
-				return _chunks[position] = SpawnChunk(position);
-			}
+			if (_chunks.TryGetValue(position, out Chunk chunk)) return chunk;
+			return _chunks[position] = SpawnChunk(position);
 		}
 
 		Chunk SpawnChunk(Vector3i chunkPosition)

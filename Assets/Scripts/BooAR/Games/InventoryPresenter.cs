@@ -53,7 +53,7 @@ namespace BooAR.Games
 			// Dispawn button objects in scene
 			foreach (InventoryButton button in _blockButtons)
 			{
-				_blockButtonPool.Despawn(button);
+				button?.ForSelf(_blockButtonPool.Despawn);
 			}
 
 			// Discard dispawned button objects
@@ -62,7 +62,11 @@ namespace BooAR.Games
 			// Repopulate buttons
 			foreach (Blocks block in BlocksUtils.All)
 			{
-				OnInventoryBlockCountChanged(block);
+				if (_inventory.Has(block))
+				{
+					InitializeBlockButton(block);
+					UpdateButtonViews(block);
+				}
 			}
 		}
 
@@ -79,11 +83,10 @@ namespace BooAR.Games
 
 		void InitializeBlockButton(Blocks block)
 		{
+			//Debug.Log("InventoryPresenter.InitializeBlockButton()");
+
 			// Don't make a button for the "empty" block type
 			if (block == Blocks.Empty) return;
-
-			// Ignore if the block doesn't exist in the inventory
-			if (!_inventory.Has(block)) return;
 
 			// Spawn (intiialize) a button for this block type
 			InventoryButton button =

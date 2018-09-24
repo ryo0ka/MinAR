@@ -58,7 +58,6 @@ namespace BooAR.Voxel
 			}
 
 			_health = Mathf.Clamp01(_health);
-			Debug.Log($"{damage} -> {_health}");
 
 			_particles.EmitDamage(position, face, block, _health);
 
