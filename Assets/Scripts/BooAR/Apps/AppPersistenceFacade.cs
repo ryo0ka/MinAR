@@ -35,7 +35,7 @@ namespace BooAR.Apps
 
 		string RootPath => Path.Combine(Application.persistentDataPath, "data");
 
-		public async UniTask SaveAll(string id)
+		public async UniTask Save(string id)
 		{
 			try
 			{
@@ -59,7 +59,7 @@ namespace BooAR.Apps
 			}
 		}
 
-		public async UniTask LoadAll(string id)
+		public async UniTask Load(string id)
 		{
 			try
 			{

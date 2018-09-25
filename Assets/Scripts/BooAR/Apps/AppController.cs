@@ -19,12 +19,12 @@ namespace BooAR.Apps
 		public async UniTask LoadGame(string id)
 		{
 			_game.Initialize();
-			await _persistence.LoadAll(id);
+			await _persistence.Load(id);
 		}
 
 		public async UniTask SaveGame(string id)
 		{
-			await _persistence.SaveAll(id);
+			await _persistence.Save(id);
 		}
 
 		public void StartNewGame()
