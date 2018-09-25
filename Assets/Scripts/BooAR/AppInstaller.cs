@@ -1,6 +1,7 @@
 ﻿using BooAR.Apps;
 using BooAR.ARs;
 using BooAR.Games;
+using BooAR.Games.Inventories;
 using BooAR.Haptics;
 using BooAR.Voxel;
 using UnityEngine;

@@ -1,4 +1,5 @@
-﻿using BooAR.Haptics;
+﻿using BooAR.Games.Inventories;
+using BooAR.Haptics;
 using BooAR.Voxel;
 using UniRx;
 using UniRx.Triggers;

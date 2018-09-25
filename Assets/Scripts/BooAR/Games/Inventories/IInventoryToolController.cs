@@ -1,4 +1,4 @@
-﻿namespace BooAR.Games
+﻿namespace BooAR.Games.Inventories
 {
 	public interface IInventoryToolController
 	{

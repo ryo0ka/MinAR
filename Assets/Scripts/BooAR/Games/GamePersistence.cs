@@ -1,4 +1,5 @@
-﻿using Zenject;
+﻿using BooAR.Games.Inventories;
+using Zenject;
 
 namespace BooAR.Games
 {

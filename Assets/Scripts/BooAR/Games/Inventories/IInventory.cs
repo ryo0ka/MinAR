@@ -1,7 +1,7 @@
 ﻿using System;
 using UniRx;
 
-namespace BooAR.Games
+namespace BooAR.Games.Inventories
 {
 	public interface IInventory
 	{

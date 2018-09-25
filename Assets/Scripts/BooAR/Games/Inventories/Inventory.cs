@@ -1,11 +1,11 @@
 ﻿using System;
 using System.IO;
+using Newtonsoft.Json;
 using UniRx;
 using UnityEngine;
-using Newtonsoft.Json;
 using Utils;
 
-namespace BooAR.Games
+namespace BooAR.Games.Inventories
 {
 	public class Inventory : IInventory
 	{

@@ -7,7 +7,7 @@ using UnityEngine.UI;
 using Utils;
 using Zenject;
 
-namespace BooAR.Games
+namespace BooAR.Games.Inventories
 {
 	public class InventoryButton : BaseBehaviour
 	{
