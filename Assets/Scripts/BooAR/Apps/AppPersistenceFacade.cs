@@ -5,6 +5,7 @@ using System.Linq;
 using BooAR.ARs;
 using BooAR.Games;
 using BooAR.Voxel;
+using UniRx;
 using UniRx.Async;
 using UnityEngine;
 using Utils;
@@ -29,6 +30,9 @@ namespace BooAR.Apps
 		IGamePersistence _game;
 #pragma warning restore 649
 
+		readonly Subject<Unit> _notifyListChanged = new Subject<Unit>();
+		public IObservable<Unit> OnChanged => _notifyListChanged;
+
 		string RootPath => Path.Combine(Application.persistentDataPath, "data");
 
 		public async UniTask SaveAll(string id)
@@ -41,6 +45,8 @@ namespace BooAR.Apps
 				_voxel.Save(path);
 				_game.Save(path);
 				await _ar.Save(path);
+				
+				_notifyListChanged.OnNext();
 			}
 			catch (Exception e)
 			{
@@ -86,6 +92,27 @@ namespace BooAR.Apps
 			return Directory
 			       .EnumerateDirectories(RootPath)
 			       .Select(f => Path.GetFileName(f));
+		}
+
+		public void DeleteGame(string id)
+		{
+			try
+			{
+				string path = GetPath(id);
+				Debug.Assert(Directory.Exists(path));
+
+				Directory.Delete(path, true);
+				_notifyListChanged.OnNext();
+			}
+			catch (Exception e)
+			{
+				Debug.LogException(e);
+				throw;
+			}
+			finally
+			{
+				Debug.Log($"AppPersistenceFacade.DeleteGame({id})");
+			}
 		}
 
 		string GetPath(string id)

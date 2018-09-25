@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using UniRx;
 using UniRx.Async;
 using UnityEngine;
@@ -12,6 +11,7 @@ namespace BooAR.Apps
 {
 	public class GameList : BaseBehaviour
 	{
+#pragma warning disable 649
 		[SerializeField]
 		Button _cancelButton;
 
@@ -20,31 +20,62 @@ namespace BooAR.Apps
 
 		[Inject]
 		IGameList _list;
+#pragma warning restore 649
+
+		readonly CompositeDisposable _open = new CompositeDisposable();
+		readonly List<GameListItem> _items = new List<GameListItem>();
+		readonly Subject<string> _selection = new Subject<string>();
+		readonly Subject<Unit> _cancellation = new Subject<Unit>();
+
+		void Prepare()
+		{
+			Initialize();
+
+			// Spawn list items
+			foreach (string id in _list.GetGameIDs())
+			{
+				GameListItem item = _itemPool.Spawn(new GameListItem.Param(id));
+
+				// Keep track of it
+				_items.Add(item);
+
+				// Route selection event
+				item.OnSelected
+				    .Subscribe(i => _selection.OnNext(i))
+				    .AddTo(_open);
+			}
+
+			// Route cancellation event
+			_cancelButton
+				.OnClickAsObservable()
+				.Subscribe(_ => _cancellation.OnNext())
+				.AddTo(_open);
+
+			// Refresh list when list changed
+			_list.OnChanged
+			     .Subscribe(_ => Prepare())
+			     .AddTo(_open);
+		}
+
+		void Initialize()
+		{
+			_open.Clear();
+			_items.ForEach(_itemPool.Despawn);
+			_items.Clear();
+		}
 
 		public async UniTask<string> Open()
 		{
 			using (UniRxUtils.Toggle(SetVisible)) // open the list, and close when finished
 			{
-				List<GameListItem> items = new List<GameListItem>();
-				
-				// Spawn list items
-				foreach (string id in _list.GetGameIDs())
-				{
-					items.Add(_itemPool.Spawn(new GameListItem.Param(id)));
-				}
+				Prepare();
 
-				// Merge all the buttons into a stream of selected ID
-				IObservable<string> inputs = items.Select(i => i.OnSelected).Merge();
+				// Return null when cancelled
+				IObservable<string> cancel = _cancellation.Select(_ => (string) null);
 
-				// Merge the "cancel" stream
-				IObservable<Unit> cancelInput = _cancelButton.OnClickAsObservable();
-				inputs = inputs.Merge(cancelInput.Select(_ => (string) null));
+				string input = await _selection.Merge(cancel).ToUniTask(useFirstValue: true);
 
-				string input = await inputs.First().ToUniTask();
-
-				// Clear the list
-				items.ForEach(_itemPool.Despawn);
-				items.Clear();
+				Initialize();
 
 				return input;
 			}

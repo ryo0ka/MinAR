@@ -3754,6 +3754,10 @@ Prefab:
       propertyPath: m_Text
       value: Cancel
       objectReference: {fileID: 0}
+    - target: {fileID: 1996689153454998, guid: 27709b8ed865bc74bb02b5e7ae340c20, type: 2}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 114064728779235486, guid: 27709b8ed865bc74bb02b5e7ae340c20, type: 2}
   m_SourcePrefab: {fileID: 100100000, guid: 27709b8ed865bc74bb02b5e7ae340c20, type: 2}
