@@ -204,53 +204,35 @@ namespace BooAR.Voxel
 		void InitiateUpdaters()
 		{
 			_blockUpdateQueue
-				.StartWorker()
-				.Subscribe(_ => UpdateBlockQuads())
-				.AddTo(_life);
-
-			_blockUpdateQueue
 				.StartMain()
-				.Subscribe(_ => UpdateBlockMesh())
-				.AddTo(_life);
-
-			_damageUpdateQueue
-				.StartWorker()
-				.Subscribe(_ => _damageMesh.UpdateQuads())
+				.ThrottleFirstFrame(1)
+				.Subscribe(_ =>
+				{
+					UpdateBlockQuads();
+				})
 				.AddTo(_life);
 
 			_damageUpdateQueue
 				.StartMain()
-				.Subscribe(_ => _damageMesh.UpdateMesh())
+				.Subscribe(_ =>
+				{
+					_damageMesh.UpdateQuads();
+					_damageMesh.UpdateMesh();
+				})
 				.AddTo(_life);
 		}
 
 		void UpdateBlockQuads() // Executed in a worker thread
 		{
-			try
+			// Clear previous mesh data
+			_meshBuilder.Clear();
+
+			// Update mesh data with current quads
+			foreach ((Quad quad, Blocks block) in _quadBuilder.Build(CancellationToken.None))
 			{
-				// cancel the ongoing update
-				_blockUpdateCanceller.Cancel();
-
-				CancellationToken token = _blockUpdateCanceller.Token;
-
-				// Clear previous mesh data
-				_meshBuilder.Clear();
-
-				// Update mesh data with current quads
-				foreach ((Quad quad, Blocks block) in _quadBuilder.Build(token))
-				{
-					_meshBuilder.Add(quad, (int) block);
-
-					token.ThrowIfCancellationRequested();
-				}
+				_meshBuilder.Add(quad, (int) block);
 			}
-			catch (OperationCanceledException)
-			{
-			}
-		}
 
-		void UpdateBlockMesh()
-		{
 			_meshBuilder.Apply(_filter.sharedMesh);
 		}
 	}

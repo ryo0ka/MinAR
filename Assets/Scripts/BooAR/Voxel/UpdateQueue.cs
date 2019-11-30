@@ -21,6 +21,8 @@ namespace BooAR.Voxel
 		public void QueueUpdate()
 		{
 			_shouldUpdateWorker = true;
+
+			_mainQueue.OnNext(); // Queue main task
 		}
 
 		public IObservable<Unit> StartWorker()
@@ -40,8 +42,6 @@ namespace BooAR.Voxel
 					       }
 
 					       observer.OnNext(); // do the worker task
-
-					       _mainQueue.OnNext(); // Queue main task
 				       });
 			});
 		}
@@ -52,7 +52,6 @@ namespace BooAR.Voxel
 			{
 				return _mainQueue
 				       .ObserveOnMainThread()
-				       .ThrottleFrame(1) // up to once every frame
 				       .Subscribe(_ =>
 				       {
 					       _isUpdatingMain = true;
