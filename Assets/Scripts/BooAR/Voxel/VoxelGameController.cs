@@ -1,4 +1,5 @@
-﻿using BooAR.Haptics;
+﻿using System;
+using BooAR.Haptics;
 using Sirenix.OdinInspector;
 using UniRx;
 using UniRx.Triggers;
@@ -19,7 +20,10 @@ namespace BooAR.Voxel
 		Transform _player;
 
 		[SerializeField]
-		Button _screen;
+		ScreenInputObserver _screen;
+
+		[SerializeField]
+		Button _godButton;
 
 		[SerializeField]
 		VoxelWorld _voxels;
@@ -38,6 +42,7 @@ namespace BooAR.Voxel
 #pragma warning restore 649
 
 		Blocks? _placedBlock;
+		bool _isGod;
 
 		void Start()
 		{
@@ -50,9 +55,17 @@ namespace BooAR.Voxel
 			       .Subscribe(p => OnPlayerPositionChanged(p));
 
 			// Raycast update
-			_screen.OnClickAsObservable()
+			_screen.OnSingleTapped
 			       //.Merge(_screen.OnDragAsObservable().AsUnitObservable())
-			       .Subscribe(r => OnRaycast(GetRay()));
+			       .Subscribe(_ => OnScreenTapped(GetRay()));
+
+			_screen.OnHoldEveryFrame
+			       .Where(_ => _isGod)
+			       .ThrottleFirst(TimeSpan.FromSeconds(.1f))
+			       .Subscribe(_ => OnScreenTapped(GetRay()));
+
+			_godButton.OnClickAsObservable()
+			          .Subscribe(_ => _isGod = !_isGod);
 
 			// Connect with block inventory
 			_inventory.OnBlockSelected.Subscribe(OnBlockButtonSelected);
@@ -84,16 +97,16 @@ namespace BooAR.Voxel
 			return r;
 		}
 
-		void OnRaycast(Ray ray)
+		void OnScreenTapped(Ray ray)
 		{
 			using (UnityUtils.Sample("VoxelWorldController.OnRaycast()"))
 			{
-				VoxelRaycast.Raycast(ray.origin, ray.direction, 10f, null, (position, face) =>
+				VoxelRaycast.Raycast(ray.origin, ray.direction, 5f, null, (position, face) =>
 				{
 					Blocks block = _voxels.GetBlockOrInit(position);
 					if (block != Blocks.Empty)
 					{
-						OnBlockSelected(position, block, face);
+						OnBlockTapped(position, block, face);
 						return true; // End tracing
 					}
 
@@ -116,7 +129,7 @@ namespace BooAR.Voxel
 			_haptics.Trigger(HapticFeedbackTypes.Selection);
 		}
 
-		void OnBlockSelected(Vector3i position, Blocks block, Vector3i face)
+		void OnBlockTapped(Vector3i position, Blocks block, Vector3i face)
 		{
 			if (_placedBlock == null)
 			{
@@ -130,7 +143,8 @@ namespace BooAR.Voxel
 
 		void DamageBlock(Vector3i position, Vector3i face, Blocks block)
 		{
-			if (_voxels.DamageBlock(position, face, 1)) // if block destroyed
+			var damage = _isGod ? 999 : 1;
+			if (_voxels.DamageBlock(position, face, damage)) // if block destroyed
 			{
 				_inventory.Add(block);
 				_haptics.Trigger(HapticFeedbackTypes.ImpactHeavy);
