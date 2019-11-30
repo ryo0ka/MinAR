@@ -6,6 +6,8 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
+[assembly: Sirenix.Serialization.RegisterFormatter(typeof(Sirenix.Serialization.Vector2IntFormatter))]
+[assembly: Sirenix.Serialization.RegisterFormatter(typeof(Sirenix.Serialization.Vector3IntFormatter))]
 namespace Sirenix.Serialization
 {
     using UnityEngine;
@@ -14,7 +16,6 @@ namespace Sirenix.Serialization
     /// Custom formatter for the <see cref="Vector2Int"/> type.
     /// </summary>
     /// <seealso cref="Sirenix.Serialization.MinimalBaseFormatter{UnityEngine.Vector2Int}" />
-    [CustomFormatter]
     public class Vector2IntFormatter : MinimalBaseFormatter<Vector2Int>
     {
         private static readonly Serializer<int> Serializer = Serialization.Serializer.Get<int>();
@@ -46,7 +47,6 @@ namespace Sirenix.Serialization
     /// Custom formatter for the <see cref="Vector3Int"/> type.
     /// </summary>
     /// <seealso cref="Sirenix.Serialization.MinimalBaseFormatter{UnityEngine.Vector3Int}" />
-    [CustomFormatter]
     public class Vector3IntFormatter : MinimalBaseFormatter<Vector3Int>
     {
         private static readonly Serializer<int> Serializer = Serialization.Serializer.Get<int>();
